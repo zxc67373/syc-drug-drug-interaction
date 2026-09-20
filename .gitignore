@@ -1,0 +1,35 @@
+# ── 密钥：绝不入库 ─────────────────────────────
+# config.yaml 是唯一存放密钥的地方；config.example.yaml 是模板，要入库。
+config.yaml
+# 下面几条是历史遗留/兜底：万一有人用环境变量文件放密钥，同样不能入库
+.env
+.env.local
+.env.*.local
+*.key
+
+# ── 模型权重：体积大，不入库 ────────────────────
+# 几百 MB 的二进制放进 git 会让仓库永远瘦不下来（历史里删不掉）。
+# 部署时单独拷，或用 scripts/fetch_model.py 从 ModelScope 拉。
+models/
+*.safetensors
+*.onnx
+*.h5
+
+# ── 数据构建产物（可由 seed 重新生成）─────────
+data/build/
+*.db
+*.sqlite
+*.sqlite3
+*.faiss
+*.index
+
+# ── 原始资料（多为扫描件/受版权保护，不入公开仓库）──
+data/raw/
+
+# ── Python ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/

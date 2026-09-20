@@ -1,0 +1,23 @@
+# 统一换行符。Windows 上不加这个，每次 checkout 都会产生满屏
+# "LF will be replaced by CRLF" 警告，diff 里全是整文件变更。
+* text=auto eol=lf
+
+# 二进制文件不要做换行符转换（转换会损坏文件）
+*.safetensors binary
+*.bin         binary
+*.pkl         binary
+*.index       binary
+*.db          binary
+*.png         binary
+*.jpg         binary
+*.ico         binary
+
+# 这些文件在 GitHub 上按语言高亮
+*.py    text
+*.yaml  text
+*.yml   text
+*.md    text
+*.js    text
+*.css   text
+*.html  text
+*.sql   text

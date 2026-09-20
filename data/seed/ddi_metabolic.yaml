@@ -1,0 +1,192 @@
+# 降糖药相关相互作用。⚠️ status=draft，excerpt 为要义转述。
+
+# ── 磺脲类 × 增强降糖作用的药物 ─────────────────────
+- ing_a: 格列本脲
+  ing_b: 阿司匹林
+  severity: caution
+  mechanism: 水杨酸类可增强磺脲类的降糖作用（置换蛋白结合 + 抑制肾排泄），并掩盖低血糖症状
+  consequence: 严重低血糖风险增加，且出汗、心悸等预警症状被掩盖
+  suggestion: 联用时减少格列本脲剂量，加强血糖监测
+  evidence_level: B
+  sources:
+    - title: 格列本脲片说明书
+      type: 说明书
+      excerpt: 与水杨酸类合用可增强降血糖作用，应注意低血糖风险。
+
+- ing_a: 格列本脲
+  ing_b: 氟康唑
+  severity: caution
+  mechanism: 氟康唑抑制 CYP2C9，减慢格列本脲代谢，半衰期延长
+  consequence: 低血糖风险显著增加，且可持续数日
+  suggestion: 联用时减量并加强血糖监测；必要时换用对 CYP2C9 影响小的抗真菌药
+  evidence_level: B
+
+- ing_a: 格列本脲
+  ing_b: 左氧氟沙星
+  severity: caution
+  mechanism: 喹诺酮类可影响糖代谢，与磺脲类联用可致低血糖或血糖波动
+  consequence: 低血糖或高血糖，血糖控制不稳定
+  suggestion: 联用时加强血糖监测
+  evidence_level: B
+
+- ing_a: 格列本脲
+  ing_b: 克拉霉素
+  severity: caution
+  mechanism: 克拉霉素抑制 CYP3A4，可能升高格列本脲浓度
+  consequence: 低血糖风险
+  suggestion: 联用时监测血糖
+  evidence_level: C
+
+- ing_a: 格列本脲
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: NSAIDs 增强磺脲类降糖作用并影响肾功能
+  consequence: 低血糖风险增加
+  suggestion: 联用时监测血糖
+  evidence_level: C
+
+- ing_a: 格列本脲
+  ing_b: 泼尼松
+  severity: caution
+  mechanism: 糖皮质激素升高血糖，拮抗降糖药作用
+  consequence: 血糖升高，糖尿病控制恶化
+  suggestion: 激素治疗期间需增加降糖药剂量，密切监测血糖；激素减停后再回调
+  evidence_level: A
+
+- ing_a: 二甲双胍
+  ing_b: 泼尼松
+  severity: monitor
+  mechanism: 糖皮质激素升高血糖，抵消二甲双胍降糖效果
+  consequence: 血糖控制变差
+  suggestion: 激素治疗期间加强血糖监测，必要时联合其他降糖药
+  evidence_level: B
+
+- ing_a: 二甲双胍
+  ing_b: 呋塞米
+  severity: monitor
+  mechanism: 利尿剂可致脱水与肾灌注下降，升高二甲双胍蓄积与乳酸酸中毒风险
+  consequence: 乳酸酸中毒风险（罕见但致命）
+  suggestion: 监测肾功能与容量状态；eGFR 下降时按说明书减量或停用
+  evidence_level: B
+  sources:
+    - title: 盐酸二甲双胍片说明书
+      type: 说明书
+      excerpt: 肾功能不全、脱水状态下使用可增加乳酸酸中毒风险，应监测肾功能。
+
+- ing_a: 二甲双胍
+  ing_b: 氢氯噻嗪
+  severity: monitor
+  mechanism: 噻嗪类利尿剂可升高血糖并影响肾功能
+  consequence: 血糖控制变差
+  suggestion: 监测血糖与肾功能
+  evidence_level: C
+
+- ing_a: 二甲双胍
+  ing_b: 卡托普利
+  severity: monitor
+  mechanism: ACEI 可增强胰岛素敏感性，与二甲双胍联用增加低血糖风险
+  consequence: 低血糖风险轻度增加
+  suggestion: 联用初期监测血糖
+  evidence_level: C
+
+- ing_a: 阿卡波糖
+  ing_b: 格列本脲
+  severity: caution
+  mechanism: 两药降糖机制不同，联用降糖作用叠加
+  consequence: 低血糖风险增加；且阿卡波糖会延缓蔗糖分解，使口服糖块的纠正低血糖效果变慢
+  suggestion: 联用时减少磺脲类剂量；发生低血糖时须口服葡萄糖（而非蔗糖）纠正
+  evidence_level: B
+  sources:
+    - title: 阿卡波糖片说明书
+      type: 说明书
+      excerpt: 与磺脲类合用时低血糖风险增加，发生低血糖时应使用葡萄糖纠正。
+
+- ing_a: 阿卡波糖
+  ing_b: 二甲双胍
+  severity: monitor
+  mechanism: 常规联合用药方案，降糖作用叠加
+  consequence: 低血糖风险轻度增加
+  suggestion: 属常规联用，按需监测血糖
+  evidence_level: A
+
+- ing_a: 格列本脲
+  ing_b: 利福平
+  severity: caution
+  mechanism: 利福平诱导肝药酶，加速格列本脲代谢
+  consequence: 降糖作用减弱，血糖升高
+  suggestion: 联用期间需增加降糖药剂量，停用利福平后回调
+  evidence_level: C
+
+# ── 甲状腺激素 ───────────────────────────────────────
+- ing_a: 左甲状腺素钠
+  ing_b: 奥美拉唑
+  severity: caution
+  mechanism: 左甲状腺素吸收依赖胃酸环境；PPI 抑制胃酸分泌，降低其吸收
+  consequence: 甲状腺激素替代不足，TSH 升高
+  suggestion: 两药间隔 4 小时以上服用；联用时复查甲状腺功能
+  evidence_level: B
+  sources:
+    - title: 左甲状腺素钠片说明书
+      type: 说明书
+      excerpt: 抑制胃酸分泌的药物可能降低左甲状腺素的吸收，应间隔服药并监测甲状腺功能。
+
+- ing_a: 左甲状腺素钠
+  ing_b: 泮托拉唑
+  severity: monitor
+  mechanism: 同 PPI 机制，轻度降低左甲状腺素吸收
+  consequence: 甲状腺功能可能波动
+  suggestion: 间隔服用，必要时复查甲状腺功能
+  evidence_level: C
+
+- ing_a: 左甲状腺素钠
+  ing_b: 卡马西平
+  severity: caution
+  mechanism: 卡马西平诱导肝药酶，加速甲状腺激素代谢
+  consequence: 甲状腺激素替代不足
+  suggestion: 联用时增加左甲状腺素剂量并监测甲状腺功能
+  evidence_level: B
+
+- ing_a: 左甲状腺素钠
+  ing_b: 苯妥英钠
+  severity: caution
+  mechanism: 苯妥英钠置换甲状腺激素的蛋白结合并诱导代谢
+  consequence: 游离甲状腺激素水平变化
+  suggestion: 监测甲状腺功能
+  evidence_level: C
+
+- ing_a: 左甲状腺素钠
+  ing_b: 泼尼松
+  severity: monitor
+  mechanism: 糖皮质激素影响甲状腺激素的代谢与 TSH 分泌
+  consequence: 甲状腺功能指标波动
+  suggestion: 联用时监测甲状腺功能
+  evidence_level: C
+
+# ── 抗痛风药 ─────────────────────────────────────────
+- ing_a: 别嘌醇
+  ing_b: 秋水仙碱
+  severity: monitor
+  mechanism: 痛风降尿酸期常规联用（预防痛风发作）
+  consequence: 属治疗性联用，注意各自不良反应叠加
+  suggestion: 按指南联用，注意骨髓抑制与肝肾功能
+  evidence_level: B
+
+- ing_a: 别嘌醇
+  ing_b: 氢氯噻嗪
+  severity: caution
+  mechanism: 噻嗪类利尿剂升高血尿酸，拮抗别嘌醇疗效；同时增加别嘌醇超敏反应风险
+  consequence: 降尿酸效果减弱；别嘌醇超敏综合征风险增加
+  suggestion: 尽量避免联用；必须联用时从小剂量开始并警惕皮疹
+  evidence_level: B
+  sources:
+    - title: 别嘌醇片说明书
+      type: 说明书
+      excerpt: 与噻嗪类利尿剂合用可增加超敏反应风险，并可能降低别嘌醇疗效。
+
+- ing_a: 别嘌醇
+  ing_b: 呋塞米
+  severity: caution
+  mechanism: 袢利尿剂升高血尿酸，拮抗别嘌醇作用
+  consequence: 降尿酸疗效减弱
+  suggestion: 监测血尿酸水平
+  evidence_level: C

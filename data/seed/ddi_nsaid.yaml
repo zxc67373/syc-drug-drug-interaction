@@ -1,0 +1,214 @@
+# NSAIDs 相关相互作用。⚠️ 同 ddi_anticoagulant.yaml 头部声明：status=draft，
+# excerpt 为要义转述，上线前须核对原文。
+
+# ── NSAIDs 之间叠加 ──────────────────────────────────
+- ing_a: 布洛芬
+  ing_b: 双氯芬酸
+  severity: contraindicated
+  mechanism: 同属非选择性 COX 抑制剂，疗效不叠加而毒性叠加
+  consequence: 消化道溃疡/出血、急性肾损伤风险显著增加
+  suggestion: 禁止联用，同类药物择一
+  evidence_level: A
+  sources:
+    - title: 布洛芬缓释胶囊说明书
+      type: 说明书
+      excerpt: 不应与其他 NSAIDs 合用，以免增加胃肠道不良反应。
+
+- ing_a: 布洛芬
+  ing_b: 塞来昔布
+  severity: contraindicated
+  mechanism: 同属 NSAIDs，毒性叠加
+  consequence: 消化道与心血管风险增加
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 双氯芬酸
+  ing_b: 吲哚美辛
+  severity: contraindicated
+  mechanism: 同属 NSAIDs，毒性叠加
+  consequence: 消化道出血、肾损伤
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 布洛芬
+  ing_b: 吲哚美辛
+  severity: contraindicated
+  mechanism: 同属 NSAIDs，毒性叠加
+  consequence: 消化道出血、肾损伤
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 双氯芬酸
+  ing_b: 塞来昔布
+  severity: contraindicated
+  mechanism: 同属 NSAIDs，毒性叠加
+  consequence: 消化道与心血管风险增加
+  suggestion: 禁止联用
+  evidence_level: A
+
+# ── NSAIDs × RAAS 阻断剂（"三重打击"）───────────────
+- ing_a: 布洛芬
+  ing_b: 卡托普利
+  severity: caution
+  mechanism: NSAIDs 抑制前列腺素合成，削弱 ACEI 的降压效果并减少肾血流灌注
+  consequence: 血压控制变差；与利尿剂合用时构成"三重打击"，急性肾损伤风险显著升高
+  suggestion: 避免长期联用；必须使用时监测血压、血肌酐与血钾
+  evidence_level: B
+  sources:
+    - title: 卡托普利片说明书
+      type: 说明书
+      excerpt: 与 NSAIDs 合用可能减弱降压效果并增加肾功能损害风险。
+
+- ing_a: 布洛芬
+  ing_b: 依那普利
+  severity: caution
+  mechanism: 同 ACEI 类机制，NSAIDs 削弱降压并损害肾灌注
+  consequence: 血压升高、急性肾损伤风险
+  suggestion: 避免长期联用，监测肾功能
+  evidence_level: B
+
+- ing_a: 布洛芬
+  ing_b: 氯沙坦钾
+  severity: caution
+  mechanism: NSAIDs 削弱 ARB 降压效果并减少肾灌注
+  consequence: 血压控制变差、肾功能恶化
+  suggestion: 避免长期联用，监测血压与血肌酐
+  evidence_level: B
+
+- ing_a: 布洛芬
+  ing_b: 缬沙坦
+  severity: caution
+  mechanism: 同 ARB 类机制
+  consequence: 血压控制变差、肾功能恶化
+  suggestion: 避免长期联用
+  evidence_level: B
+
+- ing_a: 双氯芬酸
+  ing_b: 卡托普利
+  severity: caution
+  mechanism: NSAIDs 削弱 ACEI 降压作用并损害肾灌注
+  consequence: 血压升高、急性肾损伤
+  suggestion: 避免长期联用，监测肾功能
+  evidence_level: B
+
+- ing_a: 双氯芬酸
+  ing_b: 氯沙坦钾
+  severity: caution
+  mechanism: NSAIDs 削弱 ARB 降压作用并损害肾灌注
+  consequence: 血压升高、肾功能恶化
+  suggestion: 避免长期联用
+  evidence_level: B
+
+# ── NSAIDs × 利尿剂 ──────────────────────────────────
+- ing_a: 布洛芬
+  ing_b: 呋塞米
+  severity: caution
+  mechanism: NSAIDs 抑制前列腺素，减少肾血流，削弱袢利尿剂的利尿与排钠作用
+  consequence: 利尿效果减弱、水钠潴留、急性肾损伤
+  suggestion: 避免长期联用；监测体重、尿量与肾功能
+  evidence_level: B
+  sources:
+    - title: 呋塞米片说明书
+      type: 说明书
+      excerpt: 与 NSAIDs 合用可减弱利尿作用并增加肾损害风险。
+
+- ing_a: 布洛芬
+  ing_b: 氢氯噻嗪
+  severity: caution
+  mechanism: NSAIDs 削弱噻嗪类利尿剂的降压与利尿作用
+  consequence: 血压升高、水钠潴留
+  suggestion: 避免长期联用，监测血压
+  evidence_level: B
+
+- ing_a: 吲哚美辛
+  ing_b: 呋塞米
+  severity: caution
+  mechanism: 吲哚美辛对肾前列腺素抑制强，显著削弱利尿作用
+  consequence: 利尿效果明显减弱、肾功能恶化
+  suggestion: 避免联用
+  evidence_level: B
+
+# ── NSAIDs × 保钾利尿剂 ──────────────────────────────
+- ing_a: 布洛芬
+  ing_b: 螺内酯
+  severity: caution
+  mechanism: 两者均可使血钾升高：NSAIDs 抑制肾素-醛固酮系统，螺内酯直接拮抗醛固酮
+  consequence: 高钾血症、急性肾损伤
+  suggestion: 避免联用；必须使用时监测血钾与肾功能
+  evidence_level: B
+
+- ing_a: 双氯芬酸
+  ing_b: 螺内酯
+  severity: caution
+  mechanism: 同上，高钾血症风险叠加
+  consequence: 高钾血症、肾功能恶化
+  suggestion: 避免联用，监测血钾
+  evidence_level: B
+
+# ── NSAIDs × 糖皮质激素 ──────────────────────────────
+- ing_a: 布洛芬
+  ing_b: 泼尼松
+  severity: caution
+  mechanism: 两者均损伤胃黏膜屏障，协同增加消化道溃疡风险
+  consequence: 消化道溃疡与出血风险显著升高
+  suggestion: 联用时加用 PPI 保护胃黏膜，并尽量缩短疗程
+  evidence_level: B
+
+- ing_a: 阿司匹林
+  ing_b: 泼尼松
+  severity: caution
+  mechanism: 糖皮质激素与阿司匹林协同损伤胃黏膜
+  consequence: 消化道出血风险升高
+  suggestion: 联用时加用 PPI，监测消化道症状
+  evidence_level: B
+
+- ing_a: 双氯芬酸
+  ing_b: 泼尼松
+  severity: caution
+  mechanism: 同机制，胃黏膜损伤叠加
+  consequence: 消化道溃疡与出血
+  suggestion: 加用 PPI 保护
+  evidence_level: B
+
+# ── NSAIDs × 抗痛风药 ────────────────────────────────
+- ing_a: 布洛芬
+  ing_b: 秋水仙碱
+  severity: caution
+  mechanism: 秋水仙碱本身可引起腹泻与骨髓抑制，NSAIDs 加重胃肠道反应
+  consequence: 胃肠道不良反应叠加
+  suggestion: 急性痛风发作期择一使用，避免同时足量联用
+  evidence_level: C
+
+# ── NSAIDs × 抗癫痫/其他 ─────────────────────────────
+- ing_a: 布洛芬
+  ing_b: 苯妥英钠
+  severity: monitor
+  mechanism: 布洛芬可竞争蛋白结合位点，升高游离苯妥英浓度
+  consequence: 苯妥英中毒风险
+  suggestion: 联用时监测苯妥英血药浓度
+  evidence_level: C
+
+# ── 对乙酰氨基酚 ─────────────────────────────────────
+- ing_a: 对乙酰氨基酚
+  ing_b: 卡马西平
+  severity: caution
+  mechanism: 卡马西平诱导 CYP 酶，加速对乙酰氨基酚转化为毒性代谢物 NAPQI
+  consequence: 肝毒性风险增加，尤其长期大剂量使用时
+  suggestion: 联用时限制对乙酰氨基酚日剂量（不超过 2g）
+  evidence_level: B
+
+- ing_a: 对乙酰氨基酚
+  ing_b: 异烟肼
+  severity: caution
+  mechanism: 异烟肼诱导 CYP2E1，促进对乙酰氨基酚生成毒性代谢物
+  consequence: 肝毒性风险增加
+  suggestion: 联用时限制对乙酰氨基酚剂量并监测肝功能
+  evidence_level: B
+
+- ing_a: 对乙酰氨基酚
+  ing_b: 丙戊酸钠
+  severity: monitor
+  mechanism: 丙戊酸钠可影响对乙酰氨基酚代谢
+  consequence: 肝功能影响
+  suggestion: 长期联用时监测肝功能
+  evidence_level: C

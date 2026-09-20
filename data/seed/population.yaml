@@ -1,0 +1,428 @@
+# 人群禁忌规则（单药 × 患者画像）。
+# condition_type: age | hepatic | renal | pregnancy | allergy
+# condition_value 约定：
+#   age       —— ">=65" / ">=80" / "<18"
+#   hepatic   —— mild | moderate | severe
+#   renal     —— mild | moderate | severe
+#   pregnancy —— 1
+#   allergy   —— 成分名（本文件用占位，实际由药物过敏史单独匹配）
+# ⚠️ status=draft，须经执业药师核验后方可用于生产。
+
+# ── 年龄相关（Beers 标准方向）────────────────────────
+- ingredient: 地西泮
+  condition_type: age
+  condition_value: ">=65"
+  severity: contraindicated
+  note: 老年人使用苯二氮䓬类显著增加跌倒、骨折、认知障碍风险，Beers 标准列为老年人潜在不适当用药
+
+- ingredient: 阿普唑仑
+  condition_type: age
+  condition_value: ">=65"
+  severity: contraindicated
+  note: 同苯二氮䓬类，老年人跌倒与认知损害风险显著升高
+
+- ingredient: 艾司唑仑
+  condition_type: age
+  condition_value: ">=65"
+  severity: contraindicated
+  note: 同苯二氮䓬类，老年人应避免长期使用
+
+- ingredient: 唑吡坦
+  condition_type: age
+  condition_value: ">=65"
+  severity: caution
+  note: 老年人清除减慢，次日残留镇静与跌倒风险增加，建议减量
+
+- ingredient: 氯苯那敏
+  condition_type: age
+  condition_value: ">=65"
+  severity: caution
+  note: 第一代抗组胺药中枢抑制与抗胆碱作用强，老年人易致意识模糊、尿潴留、跌倒
+
+- ingredient: 吲哚美辛
+  condition_type: age
+  condition_value: ">=65"
+  severity: contraindicated
+  note: 老年人消化道与肾脏对 NSAIDs 耐受性差，吲哚美辛中枢神经系统不良反应亦更常见
+
+- ingredient: 布洛芬
+  condition_type: age
+  condition_value: ">=75"
+  severity: caution
+  note: 高龄患者长期使用 NSAIDs 的消化道出血与肾损伤风险显著升高，建议短期最低有效剂量并评估胃保护
+
+- ingredient: 双氯芬酸
+  condition_type: age
+  condition_value: ">=75"
+  severity: caution
+  note: 高龄患者心血管与消化道风险升高
+
+- ingredient: 华法林
+  condition_type: age
+  condition_value: ">=75"
+  severity: caution
+  note: 高龄患者出血风险显著升高，尤其合并跌倒风险时，需下调 INR 目标并加密监测
+
+- ingredient: 格列本脲
+  condition_type: age
+  condition_value: ">=65"
+  severity: caution
+  note: 格列本脲半衰期长、低血糖风险高且难纠正，老年人应避免使用，改用短效磺脲或其它类
+
+- ingredient: 曲马多
+  condition_type: age
+  condition_value: ">=75"
+  severity: caution
+  note: 老年人曲马多清除减慢，跌倒、谵妄与低钠血症风险增加
+
+- ingredient: 多潘立酮
+  condition_type: age
+  condition_value: ">=60"
+  severity: caution
+  note: 60 岁以上患者使用多潘立酮心律失常与心源性猝死风险升高，且日剂量不应超过 30mg
+
+# ── 肝功能 ───────────────────────────────────────────
+- ingredient: 对乙酰氨基酚
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肝功能不全者禁用；肝功能受损时 NAPQI 解毒能力下降，肝毒性风险显著升高
+
+- ingredient: 对乙酰氨基酚
+  condition_type: hepatic
+  condition_value: moderate
+  severity: caution
+  note: 中度肝功能不全者日剂量应限制在 2g 以内并缩短疗程
+
+- ingredient: 辛伐他汀
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 活动性肝病或不明原因转氨酶持续升高者禁用他汀类
+
+- ingredient: 阿托伐他汀
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 活动性肝病者禁用
+
+- ingredient: 甲硝唑
+  condition_type: hepatic
+  condition_value: severe
+  severity: caution
+  note: 严重肝功能不全者甲硝唑代谢减慢，需减量
+
+- ingredient: 利福平
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肝功能不全者禁用；利福平本身具肝毒性
+
+- ingredient: 异烟肼
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肝功能不全者禁用；异烟肼肝毒性显著
+
+- ingredient: 丙戊酸钠
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肝功能不全者禁用；丙戊酸钠有致死性肝毒性报告
+
+- ingredient: 卡马西平
+  condition_type: hepatic
+  condition_value: severe
+  severity: caution
+  note: 肝功能不全者需减量并监测肝功能
+
+- ingredient: 秋水仙碱
+  condition_type: hepatic
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肝功能不全者禁用；秋水仙碱治疗窗极窄
+
+- ingredient: 奥氮平
+  condition_type: hepatic
+  condition_value: severe
+  severity: caution
+  note: 肝功能不全者起始剂量应降低并缓慢滴定
+
+# ── 肾功能 ───────────────────────────────────────────
+- ingredient: 二甲双胍
+  condition_type: renal
+  condition_value: severe
+  severity: contraindicated
+  note: eGFR < 30 mL/min/1.73m² 禁用；肾功能不全时二甲双胍蓄积，乳酸酸中毒风险显著升高
+
+- ingredient: 二甲双胍
+  condition_type: renal
+  condition_value: moderate
+  severity: caution
+  note: eGFR 30–45 者不建议开始用药，正在用药者需减量并加密监测肾功能
+
+- ingredient: 达比加群酯
+  condition_type: renal
+  condition_value: severe
+  severity: contraindicated
+  note: 达比加群主要经肾排泄，CrCl < 30 mL/min 禁用
+
+- ingredient: 利伐沙班
+  condition_type: renal
+  condition_value: severe
+  severity: contraindicated
+  note: CrCl < 15 mL/min 不推荐使用；中度肾功能不全需减量
+
+- ingredient: 地高辛
+  condition_type: renal
+  condition_value: severe
+  severity: caution
+  note: 地高辛经肾排泄，肾功能不全时蓄积中毒，需减量并监测血药浓度
+
+- ingredient: 秋水仙碱
+  condition_type: renal
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肾功能不全者禁用；秋水仙碱经肾排泄且治疗窗窄
+
+- ingredient: 别嘌醇
+  condition_type: renal
+  condition_value: severe
+  severity: caution
+  note: 肾功能不全者需减量，并警惕超敏反应
+
+- ingredient: 格列本脲
+  condition_type: renal
+  condition_value: moderate
+  severity: caution
+  note: 肾功能不全者格列本脲及其活性代谢物蓄积，低血糖风险显著升高
+
+- ingredient: 螺内酯
+  condition_type: renal
+  condition_value: severe
+  severity: contraindicated
+  note: 严重肾功能不全者禁用；高钾血症风险极高
+
+- ingredient: 卡托普利
+  condition_type: renal
+  condition_value: severe
+  severity: caution
+  note: 肾功能不全者 ACEI 需减量，起始后 1–2 周复查肌酐与血钾
+
+- ingredient: 依那普利
+  condition_type: renal
+  condition_value: severe
+  severity: caution
+  note: 同 ACEI 类，需减量并监测肾功能与血钾
+
+- ingredient: 阿卡波糖
+  condition_type: renal
+  condition_value: severe
+  severity: contraindicated
+  note: eGFR < 25 mL/min/1.73m² 禁用；肾功能不全者药物蓄积
+
+- ingredient: 环孢素
+  condition_type: renal
+  condition_value: severe
+  severity: caution
+  note: 环孢素本身具肾毒性，肾功能不全者需减量并监测血药浓度
+
+- ingredient: 呋塞米
+  condition_type: renal
+  condition_value: severe
+  severity: caution
+  note: 严重肾功能不全者需加大剂量，并监测电解质与容量状态
+
+# ── 妊娠 ─────────────────────────────────────────────
+- ingredient: 华法林
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 华法林可通过胎盘，致胎儿华法林综合征（鼻骨发育不全、骨骺点状钙化）与胎儿颅内出血，妊娠期禁用
+
+- ingredient: 辛伐他汀
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 他汀类可干扰胎儿胆固醇合成，妊娠期禁用
+
+- ingredient: 阿托伐他汀
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 妊娠期禁用他汀类
+
+- ingredient: 布洛芬
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 妊娠晚期（30 周后）禁用 NSAIDs，可致胎儿动脉导管早闭、羊水过少；妊娠早期亦应避免
+
+- ingredient: 双氯芬酸
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 同 NSAIDs，妊娠晚期禁用
+
+- ingredient: 阿司匹林
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 妊娠晚期大剂量使用增加出血与动脉导管早闭风险；小剂量（≤100mg）用于子痫前期预防属治疗性使用，需医师评估
+
+- ingredient: 卡托普利
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: ACEI 妊娠中晚期可致胎儿肾发育不良、羊水过少、颅骨发育不全，禁用
+
+- ingredient: 依那普利
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 同 ACEI 类，妊娠期禁用
+
+- ingredient: 氯沙坦钾
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: ARB 妊娠期禁用，胎儿毒性同 ACEI
+
+- ingredient: 缬沙坦
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: ARB 妊娠期禁用
+
+- ingredient: 螺内酯
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 螺内酯具抗雄激素作用，妊娠期慎用
+
+- ingredient: 利伐沙班
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 妊娠期禁用，可透过胎盘致出血
+
+- ingredient: 达比加群酯
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 妊娠期禁用
+
+- ingredient: 甲硝唑
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 妊娠早期慎用；妊娠中晚期需医师评估后使用
+
+- ingredient: 左氧氟沙星
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 喹诺酮类可影响胎儿软骨发育，妊娠期不推荐使用
+
+- ingredient: 莫西沙星
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 妊娠期禁用喹诺酮类
+
+- ingredient: 氟康唑
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 高剂量氟康唑有致畸报告，妊娠期避免使用高剂量
+
+- ingredient: 伊曲康唑
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 妊娠期禁用，动物实验显示致畸
+
+- ingredient: 卡马西平
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 卡马西平有致神经管缺陷风险，妊娠期需权衡癫痫控制与胎儿风险，并补充叶酸
+
+- ingredient: 丙戊酸钠
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: contraindicated
+  note: 丙戊酸钠致畸风险高（神经管缺陷、认知发育损害），育龄女性及妊娠期禁用，除非无替代方案
+
+- ingredient: 苯妥英钠
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 苯妥英钠有致畸风险（胎儿乙内酰脲综合征）
+
+- ingredient: 地西泮
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 妊娠晚期长期使用可致新生儿戒断症状与"婴儿松软综合征"
+
+- ingredient: 奥氮平
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 妊娠晚期使用可致新生儿锥体外系症状与戒断，需医师评估
+
+- ingredient: 秋水仙碱
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: caution
+  note: 有致畸风险，妊娠期仅在明确需要时使用
+
+- ingredient: 异烟肼
+  condition_type: pregnancy
+  condition_value: "1"
+  severity: monitor
+  note: 妊娠期可使用但需补充维生素 B6，并监测肝功能
+
+# ── 严重过敏（示例规则，实际由过敏史字段匹配）────────
+- ingredient: 阿莫西林
+  condition_type: allergy
+  condition_value: 青霉素
+  severity: contraindicated
+  note: 青霉素过敏者禁用。阿莫西林与头孢菌素类存在交叉过敏风险（约 1%–10%），需评估后使用
+
+- ingredient: 头孢曲松
+  condition_type: allergy
+  condition_value: 青霉素
+  severity: caution
+  note: 青霉素严重过敏（过敏性休克）者慎用头孢菌素类，交叉过敏风险约 1%–10%
+
+- ingredient: 阿司匹林
+  condition_type: allergy
+  condition_value: 阿司匹林
+  severity: contraindicated
+  note: 阿司匹林哮喘（NSAIDs 加重性呼吸道疾病）者禁用所有 NSAIDs
+
+- ingredient: 布洛芬
+  condition_type: allergy
+  condition_value: 阿司匹林
+  severity: contraindicated
+  note: 阿司匹林哮喘者对 NSAIDs 存在交叉反应，禁用
+
+- ingredient: 双氯芬酸
+  condition_type: allergy
+  condition_value: 阿司匹林
+  severity: contraindicated
+  note: 阿司匹林哮喘者禁用 NSAIDs
+
+- ingredient: 塞来昔布
+  condition_type: allergy
+  condition_value: 磺胺
+  severity: contraindicated
+  note: 塞来昔布含磺胺结构，磺胺过敏者禁用
+
+- ingredient: 别嘌醇
+  condition_type: allergy
+  condition_value: 别嘌醇
+  severity: contraindicated
+  note: 别嘌醇超敏综合征可致命，有既往超敏史者禁用；汉族人群 HLA-B*5801 阳性者风险高，用药前建议基因检测

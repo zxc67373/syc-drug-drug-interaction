@@ -1,0 +1,349 @@
+# 精神/神经系统相互作用。⚠️ status=draft，excerpt 为要义转述。
+# 本组规则以 5-HT 综合征、中枢抑制叠加、QT 延长为主。
+
+# ── 5-HT 综合征 ──────────────────────────────────────
+- ing_a: 舍曲林
+  ing_b: 曲马多
+  severity: contraindicated
+  mechanism: 曲马多抑制 5-HT 再摄取，与 SSRI 协同升高突触间隙 5-HT；同时两者均降低癫痫阈值
+  consequence: 5-HT 综合征（高热、肌阵挛、意识障碍、自主神经不稳），可致命；癫痫发作风险增加
+  suggestion: 避免联用。确需镇痛时改用非 5-HT 能镇痛药（如对乙酰氨基酚、NSAIDs）
+  evidence_level: A
+  sources:
+    - title: 盐酸曲马多缓释片说明书
+      type: 说明书
+      excerpt: 禁与 SSRI 类抗抑郁药合用，合用可致 5-HT 综合征与癫痫发作。
+
+- ing_a: 氟西汀
+  ing_b: 曲马多
+  severity: contraindicated
+  mechanism: 同 5-HT 能机制叠加；氟西汀还抑制 CYP2D6，减慢曲马多代谢
+  consequence: 5-HT 综合征、癫痫
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 帕罗西汀
+  ing_b: 曲马多
+  severity: contraindicated
+  mechanism: 同 5-HT 能机制叠加
+  consequence: 5-HT 综合征、癫痫
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 文拉法辛
+  ing_b: 曲马多
+  severity: contraindicated
+  mechanism: SNRI 与曲马多双重 5-HT/NE 再摄取抑制
+  consequence: 5-HT 综合征风险高
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 舍曲林
+  ing_b: 文拉法辛
+  severity: caution
+  mechanism: 两种抗抑郁药均增强 5-HT 能传导
+  consequence: 5-HT 综合征风险增加
+  suggestion: 避免叠加使用；换药时须充分洗脱期
+  evidence_level: B
+
+- ing_a: 氟西汀
+  ing_b: 文拉法辛
+  severity: caution
+  mechanism: 5-HT 能作用叠加
+  consequence: 5-HT 综合征风险
+  suggestion: 避免叠加，换药须洗脱
+  evidence_level: B
+
+- ing_a: 氟西汀
+  ing_b: 帕罗西汀
+  severity: contraindicated
+  mechanism: 两种 SSRI 作用靶点相同，疗效不叠加而毒性叠加；氟西汀半衰期长，停药后仍长期抑制 CYP2D6
+  consequence: 5-HT 综合征风险显著增加
+  suggestion: 禁止联用，同类药物择一
+  evidence_level: A
+  sources:
+    - title: 盐酸氟西汀胶囊说明书
+      type: 说明书
+      excerpt: 不推荐与其他 SSRI 合用，合用可增加 5-HT 综合征风险。
+
+- ing_a: 舍曲林
+  ing_b: 帕罗西汀
+  severity: contraindicated
+  mechanism: 两种 SSRI 叠加
+  consequence: 5-HT 综合征
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 舍曲林
+  ing_b: 氟西汀
+  severity: contraindicated
+  mechanism: 两种 SSRI 叠加
+  consequence: 5-HT 综合征
+  suggestion: 禁止联用
+  evidence_level: A
+
+# ── 阿片类 × 苯二氮䓬类（呼吸抑制）──────────────────
+- ing_a: 吗啡
+  ing_b: 地西泮
+  severity: contraindicated
+  mechanism: 阿片类抑制脑干呼吸中枢，苯二氮䓬类增强 GABA 能中枢抑制，两者协同
+  consequence: 严重呼吸抑制、深度镇静、昏迷乃至死亡（FDA 黑框警告）
+  suggestion: 避免联用。确需联用时使用最低剂量、最短疗程，并考虑处方纳洛酮
+  evidence_level: A
+  sources:
+    - title: 硫酸吗啡缓释片说明书
+      type: 说明书
+      excerpt: 与苯二氮䓬类或其他中枢抑制剂合用可致严重呼吸抑制、昏迷甚至死亡。
+
+- ing_a: 吗啡
+  ing_b: 阿普唑仑
+  severity: contraindicated
+  mechanism: 阿片类与苯二氮䓬类中枢抑制协同
+  consequence: 严重呼吸抑制、死亡风险
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 吗啡
+  ing_b: 艾司唑仑
+  severity: contraindicated
+  mechanism: 中枢抑制协同
+  consequence: 呼吸抑制
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 吗啡
+  ing_b: 唑吡坦
+  severity: contraindicated
+  mechanism: 镇静催眠药与阿片类中枢抑制协同
+  consequence: 呼吸抑制、跌倒、认知障碍
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 可待因
+  ing_b: 地西泮
+  severity: contraindicated
+  mechanism: 可待因在体内部分转化为吗啡，中枢抑制协同
+  consequence: 呼吸抑制
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 曲马多
+  ing_b: 地西泮
+  severity: contraindicated
+  mechanism: 曲马多中枢抑制作用与苯二氮䓬类叠加
+  consequence: 呼吸抑制、过度镇静
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 可待因
+  ing_b: 阿普唑仑
+  severity: contraindicated
+  mechanism: 中枢抑制协同
+  consequence: 呼吸抑制
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 曲马多
+  ing_b: 阿普唑仑
+  severity: contraindicated
+  mechanism: 中枢抑制协同
+  consequence: 呼吸抑制
+  suggestion: 避免联用
+  evidence_level: A
+
+- ing_a: 吗啡
+  ing_b: 可待因
+  severity: caution
+  mechanism: 两种阿片类叠加，中枢抑制与便秘等不良反应加重
+  consequence: 呼吸抑制、过度镇静
+  suggestion: 避免叠加使用
+  evidence_level: B
+
+# ── 苯二氮䓬类之间 / 与其他镇静药 ────────────────────
+- ing_a: 地西泮
+  ing_b: 阿普唑仑
+  severity: contraindicated
+  mechanism: 同类苯二氮䓬叠加，GABA 能抑制成倍增强
+  consequence: 过度镇静、呼吸抑制、跌倒
+  suggestion: 禁止联用，二者择一
+  evidence_level: A
+
+- ing_a: 地西泮
+  ing_b: 艾司唑仑
+  severity: contraindicated
+  mechanism: 同类叠加
+  consequence: 过度镇静、呼吸抑制
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 阿普唑仑
+  ing_b: 艾司唑仑
+  severity: contraindicated
+  mechanism: 同类叠加
+  consequence: 过度镇静、呼吸抑制
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 唑吡坦
+  ing_b: 地西泮
+  severity: contraindicated
+  mechanism: 非苯二氮䓬类催眠药与苯二氮䓬类均作用于 GABA-A 受体
+  consequence: 过度镇静、呼吸抑制、复杂睡眠行为
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 唑吡坦
+  ing_b: 阿普唑仑
+  severity: contraindicated
+  mechanism: 同类中枢抑制叠加
+  consequence: 过度镇静、呼吸抑制
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 地西泮
+  ing_b: 氯苯那敏
+  severity: caution
+  mechanism: 第一代抗组胺药具中枢抑制作用，与苯二氮䓬类叠加
+  consequence: 嗜睡、认知与运动功能损害，老年患者跌倒风险高
+  suggestion: 避免联用，尤其老年人；改用非镇静性抗组胺药
+  evidence_level: B
+
+- ing_a: 艾司唑仑
+  ing_b: 氯苯那敏
+  severity: caution
+  mechanism: 中枢抑制叠加
+  consequence: 嗜睡、跌倒
+  suggestion: 避免联用
+  evidence_level: C
+
+- ing_a: 唑吡坦
+  ing_b: 氯苯那敏
+  severity: caution
+  mechanism: 中枢抑制叠加
+  consequence: 过度镇静
+  suggestion: 避免联用
+  evidence_level: C
+
+# ── SSRI × 抗血小板（消化道出血）────────────────────
+- ing_a: 舍曲林
+  ing_b: 阿司匹林
+  severity: caution
+  mechanism: SSRI 抑制血小板 5-HT 再摄取，损害血小板聚集功能，与抗血小板药协同
+  consequence: 消化道出血风险显著增加
+  suggestion: 联用时加用 PPI 保护胃黏膜，并评估出血风险
+  evidence_level: B
+  sources:
+    - title: 盐酸舍曲林片说明书
+      type: 说明书
+      excerpt: 与 NSAIDs、阿司匹林或其他抗血小板药合用可增加消化道出血风险。
+
+- ing_a: 氟西汀
+  ing_b: 阿司匹林
+  severity: caution
+  mechanism: 同 SSRI 血小板机制
+  consequence: 消化道出血风险增加
+  suggestion: 加用 PPI 保护
+  evidence_level: B
+
+- ing_a: 帕罗西汀
+  ing_b: 阿司匹林
+  severity: caution
+  mechanism: 同 SSRI 血小板机制
+  consequence: 消化道出血风险增加
+  suggestion: 加用 PPI 保护
+  evidence_level: B
+
+- ing_a: 舍曲林
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: SSRI 损害血小板功能 + NSAIDs 抑制血小板并损伤胃黏膜
+  consequence: 消化道出血风险显著增加
+  suggestion: 避免联用；必须使用时加 PPI 并缩短疗程
+  evidence_level: B
+
+- ing_a: 氟西汀
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: 同机制叠加
+  consequence: 消化道出血风险
+  suggestion: 加用 PPI 保护
+  evidence_level: B
+
+- ing_a: 舍曲林
+  ing_b: 华法林
+  severity: caution
+  mechanism: SSRI 损害血小板功能，叠加抗凝作用
+  consequence: 出血风险增加
+  suggestion: 联用时加强 INR 与出血征象监测
+  evidence_level: B
+
+# ── 抗精神病药 ───────────────────────────────────────
+- ing_a: 奥氮平
+  ing_b: 氟西汀
+  severity: caution
+  mechanism: 氟西汀抑制 CYP2D6 与 CYP1A2，升高奥氮平血药浓度；两者均延长 QT
+  consequence: 奥氮平不良反应加重（镇静、体重增加、代谢异常），QT 延长
+  suggestion: 联用时降低奥氮平剂量并监测
+  evidence_level: B
+
+- ing_a: 奥氮平
+  ing_b: 氟康唑
+  severity: caution
+  mechanism: 氟康唑抑制 CYP1A2/CYP3A4，升高奥氮平浓度
+  consequence: 奥氮平毒性增加
+  suggestion: 联用时减量并监测
+  evidence_level: C
+
+- ing_a: 奥氮平
+  ing_b: 氯氮平
+  severity: caution
+  mechanism: 两种抗精神病药叠加，且均降低癫痫阈值、影响代谢
+  consequence: 镇静、代谢紊乱、粒细胞缺乏风险叠加
+  suggestion: 避免联用；氯氮平本身需监测血常规
+  evidence_level: B
+
+- ing_a: 氯氮平
+  ing_b: 卡马西平
+  severity: contraindicated
+  mechanism: 两者均可致粒细胞缺乏，且卡马西平诱导氯氮平代谢
+  consequence: 粒细胞缺乏症风险显著增加（可致命）
+  suggestion: 禁止联用；氯氮平使用者需定期监测血常规
+  evidence_level: A
+  sources:
+    - title: 氯氮平片说明书
+      type: 说明书
+      excerpt: 不推荐与卡马西平合用，两者均可引起骨髓抑制，合用增加粒细胞缺乏风险。
+
+- ing_a: 奥氮平
+  ing_b: 卡马西平
+  severity: caution
+  mechanism: 卡马西平诱导 CYP3A4 与 CYP1A2，显著降低奥氮平血药浓度
+  consequence: 奥氮平疗效下降
+  suggestion: 联用时监测疗效，必要时调整剂量
+  evidence_level: B
+
+# ── 抗抑郁药换药 ─────────────────────────────────────
+- ing_a: 帕罗西汀
+  ing_b: 文拉法辛
+  severity: caution
+  mechanism: 两种抗抑郁药叠加增强 5-HT 能传导
+  consequence: 5-HT 综合征
+  suggestion: 换药须设洗脱期，避免叠加
+  evidence_level: B
+
+- ing_a: 美托洛尔
+  ing_b: 舍曲林
+  severity: monitor
+  mechanism: 舍曲林对 CYP2D6 抑制弱于氟西汀/帕罗西汀
+  consequence: 美托洛尔浓度轻度升高
+  suggestion: 监测心率与血压
+  evidence_level: C
+
+# ── 抗癫痫药 ─────────────────────────────────────────
+- ing_a: 丙戊酸钠
+  ing_b: 奥氮平
+  severity: caution
+  mechanism: 丙戊酸钠抑制葡萄糖醛酸转移酶，可能升高奥氮平浓度；两者均致体重增加与代谢异常
+  consequence: 代谢不良反应叠加
+  suggestion: 监测体重、血糖与血脂
+  evidence_level: C

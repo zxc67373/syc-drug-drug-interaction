@@ -1,0 +1,268 @@
+# CYP450 介导的代谢性相互作用。⚠️ status=draft，excerpt 为要义转述。
+
+# ── 他汀类 × CYP3A4 强抑制剂（横纹肌溶解风险）────────
+- ing_a: 辛伐他汀
+  ing_b: 克拉霉素
+  severity: contraindicated
+  mechanism: 克拉霉素强力抑制 CYP3A4，辛伐他汀血药浓度可升高约 10 倍
+  consequence: 肌病与横纹肌溶解风险显著增加，可致急性肾衰竭
+  suggestion: 禁止联用。克拉霉素疗程内暂停辛伐他汀；需抗感染时改用阿奇霉素
+  evidence_level: A
+  sources:
+    - title: 辛伐他汀片说明书
+      type: 说明书
+      excerpt: 禁与强效 CYP3A4 抑制剂（如克拉霉素）合用，合用可显著增加肌病风险。
+
+- ing_a: 辛伐他汀
+  ing_b: 伊曲康唑
+  severity: contraindicated
+  mechanism: 伊曲康唑为强效 CYP3A4 抑制剂，显著升高辛伐他汀暴露量
+  consequence: 横纹肌溶解
+  suggestion: 禁止联用，抗真菌治疗期间暂停辛伐他汀
+  evidence_level: A
+
+- ing_a: 辛伐他汀
+  ing_b: 氟康唑
+  severity: contraindicated
+  mechanism: 氟康唑抑制 CYP3A4 及 CYP2C9，升高辛伐他汀浓度
+  consequence: 肌病风险升高
+  suggestion: 禁止联用或暂停他汀
+  evidence_level: B
+
+- ing_a: 阿托伐他汀
+  ing_b: 克拉霉素
+  severity: contraindicated
+  mechanism: 克拉霉素抑制 CYP3A4，升高阿托伐他汀暴露量
+  consequence: 肌病与横纹肌溶解风险增加
+  suggestion: 避免联用；确需使用时阿托伐他汀减至最低剂量并监测肌酸激酶
+  evidence_level: A
+  sources:
+    - title: 阿托伐他汀钙片说明书
+      type: 说明书
+      excerpt: 与克拉霉素等 CYP3A4 强抑制剂合用时，应限制阿托伐他汀剂量并监测肌病症状。
+
+- ing_a: 阿托伐他汀
+  ing_b: 伊曲康唑
+  severity: caution
+  mechanism: 伊曲康唑抑制 CYP3A4，升高阿托伐他汀浓度
+  consequence: 肌病风险增加
+  suggestion: 联用时限制阿托伐他汀剂量，监测肌痛与肌酸激酶
+  evidence_level: B
+
+- ing_a: 阿托伐他汀
+  ing_b: 氟康唑
+  severity: caution
+  mechanism: 氟康唑抑制 CYP3A4，升高他汀暴露量
+  consequence: 肌病风险
+  suggestion: 联用时监测肌酸激酶
+  evidence_level: C
+
+- ing_a: 辛伐他汀
+  ing_b: 胺碘酮
+  severity: caution
+  mechanism: 胺碘酮抑制 CYP3A4，升高辛伐他汀浓度
+  consequence: 肌病风险增加
+  suggestion: 辛伐他汀日剂量不超过 20mg，监测肌酸激酶
+  evidence_level: B
+  sources:
+    - title: 辛伐他汀片说明书
+      type: 说明书
+      excerpt: 与胺碘酮合用时辛伐他汀剂量不应超过每日 20mg。
+
+- ing_a: 辛伐他汀
+  ing_b: 环孢素
+  severity: contraindicated
+  mechanism: 环孢素强效抑制 CYP3A4 及 OATP1B1 转运体，辛伐他汀暴露量可升高数十倍
+  consequence: 严重横纹肌溶解
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 阿托伐他汀
+  ing_b: 环孢素
+  severity: contraindicated
+  mechanism: 环孢素抑制 CYP3A4 与 OATP1B1，显著升高阿托伐他汀浓度
+  consequence: 横纹肌溶解风险高
+  suggestion: 避免联用；必须使用时阿托伐他汀严格限量并密切监测
+  evidence_level: A
+
+- ing_a: 辛伐他汀
+  ing_b: 卡马西平
+  severity: caution
+  mechanism: 卡马西平诱导 CYP3A4，降低辛伐他汀疗效
+  consequence: 降脂疗效减弱
+  suggestion: 监测血脂，必要时调整他汀剂量
+  evidence_level: C
+
+- ing_a: 辛伐他汀
+  ing_b: 利福平
+  severity: caution
+  mechanism: 利福平诱导 CYP3A4，显著降低辛伐他汀血药浓度
+  consequence: 降脂疗效明显减弱
+  suggestion: 联用时需调整他汀剂量或换用不经 CYP3A4 代谢的品种
+  evidence_level: B
+
+# ── 抗癫痫药 × CYP 抑制剂 ────────────────────────────
+- ing_a: 苯妥英钠
+  ing_b: 氟康唑
+  severity: contraindicated
+  mechanism: 氟康唑强力抑制 CYP2C9/CYP2C19，显著减慢苯妥英代谢
+  consequence: 苯妥英血药浓度升高，出现眼球震颤、共济失调、意识障碍等中毒表现
+  suggestion: 避免联用；必须使用时监测苯妥英血药浓度并减量
+  evidence_level: A
+  sources:
+    - title: 苯妥英钠片说明书
+      type: 说明书
+      excerpt: 与氟康唑合用可升高苯妥英血药浓度，需监测血药浓度并调整剂量。
+
+- ing_a: 卡马西平
+  ing_b: 克拉霉素
+  severity: caution
+  mechanism: 克拉霉素抑制 CYP3A4，升高卡马西平活性代谢物浓度
+  consequence: 卡马西平中毒：头晕、共济失调、恶心
+  suggestion: 联用时监测卡马西平血药浓度，必要时减量
+  evidence_level: B
+
+- ing_a: 卡马西平
+  ing_b: 氟西汀
+  severity: caution
+  mechanism: 氟西汀抑制 CYP2D6/CYP3A4，升高卡马西平浓度；卡马西平又诱导氟西汀代谢
+  consequence: 卡马西平中毒风险 + 抗抑郁疗效不稳定
+  suggestion: 避免联用，或监测两者血药浓度
+  evidence_level: B
+
+- ing_a: 卡马西平
+  ing_b: 伊曲康唑
+  severity: caution
+  mechanism: 卡马西平诱导 CYP3A4 降低伊曲康唑浓度，伊曲康唑又抑制卡马西平代谢
+  consequence: 抗真菌疗效失败 + 卡马西平毒性
+  suggestion: 避免联用
+  evidence_level: B
+
+- ing_a: 苯妥英钠
+  ing_b: 伊曲康唑
+  severity: caution
+  mechanism: 相互作用使伊曲康唑疗效降低、苯妥英浓度升高
+  consequence: 双向不良影响
+  suggestion: 避免联用
+  evidence_level: B
+
+- ing_a: 丙戊酸钠
+  ing_b: 卡马西平
+  severity: caution
+  mechanism: 丙戊酸钠抑制卡马西平环氧代谢物水解，升高其浓度
+  consequence: 卡马西平毒性反应
+  suggestion: 联用时监测卡马西平血药浓度
+  evidence_level: B
+
+- ing_a: 丙戊酸钠
+  ing_b: 苯妥英钠
+  severity: caution
+  mechanism: 丙戊酸钠竞争蛋白结合并抑制苯妥英代谢，改变游离苯妥英浓度
+  consequence: 苯妥英浓度波动，中毒或疗效不足
+  suggestion: 监测游离苯妥英浓度
+  evidence_level: B
+
+# ── 抗真菌药 × 其他 ──────────────────────────────────
+- ing_a: 氟康唑
+  ing_b: 环孢素
+  severity: caution
+  mechanism: 氟康唑抑制 CYP3A4，升高环孢素血药浓度
+  consequence: 环孢素肾毒性、神经毒性风险增加
+  suggestion: 联用时监测环孢素血药浓度并调整剂量
+  evidence_level: B
+
+- ing_a: 伊曲康唑
+  ing_b: 环孢素
+  severity: caution
+  mechanism: 伊曲康唑抑制 CYP3A4，显著升高环孢素浓度
+  consequence: 肾毒性风险增加
+  suggestion: 监测环孢素浓度并减量
+  evidence_level: B
+
+- ing_a: 克拉霉素
+  ing_b: 环孢素
+  severity: caution
+  mechanism: 克拉霉素抑制 CYP3A4，升高环孢素暴露
+  consequence: 肾功能损害风险
+  suggestion: 监测环孢素血药浓度与肾功能
+  evidence_level: B
+
+- ing_a: 克拉霉素
+  ing_b: 秋水仙碱
+  severity: contraindicated
+  mechanism: 克拉霉素抑制 CYP3A4 与 P-gp，显著升高秋水仙碱浓度
+  consequence: 秋水仙碱中毒：骨髓抑制、多器官衰竭，已有死亡报告
+  suggestion: 禁止联用；肾功能或肝功能不全者尤须避免
+  evidence_level: A
+  sources:
+    - title: 秋水仙碱片说明书
+      type: 说明书
+      excerpt: 禁与克拉霉素等强效 CYP3A4/P-gp 抑制剂合用，合用可致秋水仙碱中毒甚至死亡。
+
+- ing_a: 环孢素
+  ing_b: 秋水仙碱
+  severity: contraindicated
+  mechanism: 环孢素抑制 P-gp 与 CYP3A4，显著升高秋水仙碱浓度
+  consequence: 秋水仙碱中毒，神经肌肉毒性
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 克拉霉素
+  ing_b: 多潘立酮
+  severity: contraindicated
+  mechanism: 两者均延长 QT 间期，且克拉霉素抑制 CYP3A4 升高多潘立酮浓度
+  consequence: 尖端扭转型室速、心脏骤停风险
+  suggestion: 禁止联用
+  evidence_level: A
+  sources:
+    - title: 多潘立酮片说明书
+      type: 说明书
+      excerpt: 禁与强效 CYP3A4 抑制剂及可延长 QT 间期的药物合用。
+
+- ing_a: 克拉霉素
+  ing_b: 茶碱
+  severity: caution
+  mechanism: 克拉霉素抑制 CYP3A4，减慢茶碱代谢
+  consequence: 茶碱血药浓度升高，出现恶心、心动过速、心律失常
+  suggestion: 联用时监测茶碱血药浓度
+  evidence_level: B
+
+- ing_a: 左氧氟沙星
+  ing_b: 茶碱
+  severity: caution
+  mechanism: 喹诺酮类抑制 CYP1A2，减慢茶碱代谢
+  consequence: 茶碱中毒风险
+  suggestion: 联用时监测茶碱血药浓度并酌情减量
+  evidence_level: B
+  sources:
+    - title: 氨茶碱片说明书
+      type: 说明书
+      excerpt: 与喹诺酮类抗菌药合用可升高茶碱血药浓度，需监测并调整剂量。
+
+- ing_a: 利福平
+  ing_b: 克拉霉素
+  severity: monitor
+  mechanism: 利福平诱导 CYP3A4 降低克拉霉素浓度；克拉霉素可能影响利福平吸收
+  consequence: 抗感染疗效可能下降
+  suggestion: 避免联用或调整方案
+  evidence_level: C
+
+- ing_a: 利福平
+  ing_b: 异烟肼
+  severity: caution
+  mechanism: 两者均为肝毒性药物，联用加重肝损伤；利福平还诱导异烟肼代谢生成毒性中间体
+  consequence: 药物性肝损伤风险显著增加
+  suggestion: 抗结核标准方案中本就联用，但须定期监测肝功能（转氨酶）
+  evidence_level: A
+  sources:
+    - title: 异烟肼片说明书
+      type: 说明书
+      excerpt: 与利福平合用可增加肝毒性，用药期间应定期检查肝功能。
+
+- ing_a: 别嘌醇
+  ing_b: 阿莫西林
+  severity: caution
+  mechanism: 别嘌醇增加阿莫西林相关皮疹发生率
+  consequence: 皮疹发生率升高
+  suggestion: 联用时关注皮肤反应
+  evidence_level: C

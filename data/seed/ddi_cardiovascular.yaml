@@ -1,0 +1,281 @@
+# 心血管系统相互作用。⚠️ status=draft，excerpt 为要义转述。
+
+# ── RAAS 双重阻断 / 高钾血症 ─────────────────────────
+- ing_a: 卡托普利
+  ing_b: 螺内酯
+  severity: contraindicated
+  mechanism: ACEI 减少醛固酮分泌，螺内酯直接拮抗醛固酮受体，两者均升高血钾
+  consequence: 严重高钾血症，可致致命性心律失常；肾功能不全者风险更高
+  suggestion: 避免联用。确需联用（如心衰）时须从最小剂量开始，起始 1 周内复查血钾与肌酐
+  evidence_level: A
+  sources:
+    - title: 螺内酯片说明书
+      type: 说明书
+      excerpt: 与 ACEI 合用可致高钾血症，合用期间应密切监测血钾。
+
+- ing_a: 依那普利
+  ing_b: 螺内酯
+  severity: contraindicated
+  mechanism: 同 ACEI 机制，高钾血症风险叠加
+  consequence: 严重高钾血症
+  suggestion: 避免联用或严密监测血钾
+  evidence_level: A
+
+- ing_a: 氯沙坦钾
+  ing_b: 螺内酯
+  severity: contraindicated
+  mechanism: ARB 减少醛固酮分泌，与螺内酯叠加升高血钾
+  consequence: 严重高钾血症
+  suggestion: 避免联用或严密监测血钾与肾功能
+  evidence_level: A
+
+- ing_a: 缬沙坦
+  ing_b: 螺内酯
+  severity: contraindicated
+  mechanism: 同 ARB 机制
+  consequence: 严重高钾血症
+  suggestion: 避免联用或严密监测
+  evidence_level: A
+
+- ing_a: 卡托普利
+  ing_b: 氯沙坦钾
+  severity: caution
+  mechanism: ACEI 与 ARB 双重阻断 RAAS，降压与升钾作用叠加
+  consequence: 高钾血症、低血压、急性肾损伤风险增加，且临床获益未证实
+  suggestion: 不推荐联用，二者择一
+  evidence_level: A
+  sources:
+    - title: 氯沙坦钾片说明书
+      type: 说明书
+      excerpt: 不推荐与 ACEI 联用双重阻断肾素-血管紧张素系统。
+
+- ing_a: 依那普利
+  ing_b: 缬沙坦
+  severity: caution
+  mechanism: ACEI 与 ARB 双重阻断
+  consequence: 高钾血症、肾功能恶化
+  suggestion: 不推荐联用
+  evidence_level: A
+
+- ing_a: 卡托普利
+  ing_b: 氢氯噻嗪
+  severity: monitor
+  mechanism: 常规降压联合方案，噻嗪类激活 RAAS 反被 ACEI 抑制，协同降压
+  consequence: 属治疗性联用，注意首剂低血压与电解质紊乱
+  suggestion: 属常用复方方案，监测血压与血钾
+  evidence_level: A
+
+- ing_a: 氯沙坦钾
+  ing_b: 氢氯噻嗪
+  severity: monitor
+  mechanism: 常规降压联合方案
+  consequence: 属治疗性联用
+  suggestion: 监测血压与电解质
+  evidence_level: A
+
+- ing_a: 螺内酯
+  ing_b: 氢氯噻嗪
+  severity: monitor
+  mechanism: 保钾与排钾利尿剂联用，血钾影响部分抵消
+  consequence: 电解质紊乱风险降低但仍需监测
+  suggestion: 属常用联合方案，监测血钾
+  evidence_level: B
+
+# ── 地高辛（治疗窗窄）────────────────────────────────
+- ing_a: 地高辛
+  ing_b: 胺碘酮
+  severity: contraindicated
+  mechanism: 胺碘酮抑制 P-糖蛋白介导的地高辛外排，使其血药浓度升高 70%–100%
+  consequence: 地高辛中毒：恶心、视觉异常（黄视）、各类心律失常
+  suggestion: 联用时地高辛剂量减半，并在 1 周内监测血药浓度
+  evidence_level: A
+  sources:
+    - title: 地高辛片说明书
+      type: 说明书
+      excerpt: 与胺碘酮合用可显著升高地高辛血药浓度，应减量并监测血药浓度。
+
+- ing_a: 地高辛
+  ing_b: 呋塞米
+  severity: caution
+  mechanism: 袢利尿剂致低钾血症，低钾增强心肌对地高辛的敏感性
+  consequence: 即使地高辛浓度正常也可发生中毒性心律失常
+  suggestion: 联用时补钾并监测血钾与地高辛浓度
+  evidence_level: A
+  sources:
+    - title: 地高辛片说明书
+      type: 说明书
+      excerpt: 排钾利尿剂可致低钾血症，增加地高辛中毒风险，应注意补钾。
+
+- ing_a: 地高辛
+  ing_b: 氢氯噻嗪
+  severity: caution
+  mechanism: 噻嗪类致低钾，增强地高辛毒性
+  consequence: 地高辛中毒风险增加
+  suggestion: 监测血钾，必要时补钾
+  evidence_level: B
+
+- ing_a: 地高辛
+  ing_b: 螺内酯
+  severity: monitor
+  mechanism: 螺内酯保钾，可减轻利尿剂所致的低钾；同时可能轻度升高地高辛浓度
+  consequence: 血钾改善但地高辛浓度可能上升
+  suggestion: 监测血钾与地高辛浓度
+  evidence_level: C
+
+- ing_a: 地高辛
+  ing_b: 克拉霉素
+  severity: caution
+  mechanism: 克拉霉素抑制 P-gp 并抑制肠道菌群对地高辛的灭活
+  consequence: 地高辛血药浓度升高，中毒风险增加
+  suggestion: 联用时监测地高辛浓度，必要时减量
+  evidence_level: B
+
+- ing_a: 地高辛
+  ing_b: 阿托伐他汀
+  severity: monitor
+  mechanism: 他汀可能轻度抑制 P-gp，升高地高辛浓度
+  consequence: 地高辛浓度轻度升高
+  suggestion: 联用时监测地高辛浓度
+  evidence_level: C
+
+# ── 抗心律失常药 ─────────────────────────────────────
+- ing_a: 胺碘酮
+  ing_b: 美托洛尔
+  severity: caution
+  mechanism: 两者均抑制窦房结与房室结传导
+  consequence: 严重心动过缓、房室传导阻滞
+  suggestion: 联用时监测心率与心电图，必要时减量
+  evidence_level: B
+  sources:
+    - title: 盐酸胺碘酮片说明书
+      type: 说明书
+      excerpt: 与 β 受体阻滞剂合用可加重心动过缓与传导阻滞，应严密监测。
+
+- ing_a: 胺碘酮
+  ing_b: 比索洛尔
+  severity: caution
+  mechanism: 同 β 受体阻滞剂机制，传导抑制叠加
+  consequence: 心动过缓、传导阻滞
+  suggestion: 监测心率与心电图
+  evidence_level: B
+
+- ing_a: 胺碘酮
+  ing_b: 莫西沙星
+  severity: contraindicated
+  mechanism: 两者均显著延长 QT 间期
+  consequence: 尖端扭转型室速风险显著增加
+  suggestion: 禁止联用；需抗感染时改用不延长 QT 的抗菌药
+  evidence_level: A
+  sources:
+    - title: 盐酸莫西沙星片说明书
+      type: 说明书
+      excerpt: 禁与可延长 QT 间期的药物（如胺碘酮）合用。
+
+- ing_a: 胺碘酮
+  ing_b: 左氧氟沙星
+  severity: caution
+  mechanism: 两者均延长 QT 间期
+  consequence: QT 延长，心律失常风险增加
+  suggestion: 避免联用；必须使用时监测心电图 QT 间期
+  evidence_level: B
+
+- ing_a: 胺碘酮
+  ing_b: 多潘立酮
+  severity: contraindicated
+  mechanism: 两者均延长 QT 间期
+  consequence: 尖端扭转型室速
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 莫西沙星
+  ing_b: 多潘立酮
+  severity: contraindicated
+  mechanism: 两者均延长 QT 间期
+  consequence: 尖端扭转型室速
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 莫西沙星
+  ing_b: 氢氯噻嗪
+  severity: caution
+  mechanism: 噻嗪类致低钾，低钾加重 QT 延长
+  consequence: 心律失常风险增加
+  suggestion: 联用时监测血钾与心电图
+  evidence_level: C
+
+- ing_a: 莫西沙星
+  ing_b: 呋塞米
+  severity: caution
+  mechanism: 袢利尿剂致低钾低镁，加重 QT 延长
+  consequence: 尖端扭转型室速风险
+  suggestion: 联用时纠正电解质并监测心电图
+  evidence_level: C
+
+# ── 降压药之间的联用 ─────────────────────────────────
+- ing_a: 硝苯地平
+  ing_b: 美托洛尔
+  severity: monitor
+  mechanism: 常规联合降压方案；硝苯地平反射性心动过速可被 β 阻滞剂抵消
+  consequence: 属治疗性联用
+  suggestion: 监测血压与心率
+  evidence_level: A
+
+- ing_a: 氨氯地平
+  ing_b: 美托洛尔
+  severity: monitor
+  mechanism: 常规联合降压方案
+  consequence: 属治疗性联用
+  suggestion: 监测血压与心率
+  evidence_level: A
+
+- ing_a: 硝苯地平
+  ing_b: 比索洛尔
+  severity: monitor
+  mechanism: 常规联合降压方案
+  consequence: 属治疗性联用
+  suggestion: 监测血压与心率
+  evidence_level: A
+
+- ing_a: 氨氯地平
+  ing_b: 辛伐他汀
+  severity: caution
+  mechanism: 氨氯地平抑制 CYP3A4，升高辛伐他汀暴露量
+  consequence: 肌病风险增加
+  suggestion: 辛伐他汀日剂量不超过 20mg
+  evidence_level: B
+  sources:
+    - title: 辛伐他汀片说明书
+      type: 说明书
+      excerpt: 与氨氯地平合用时，辛伐他汀剂量不应超过每日 20mg。
+
+- ing_a: 美托洛尔
+  ing_b: 氟西汀
+  severity: caution
+  mechanism: 氟西汀抑制 CYP2D6，减慢美托洛尔代谢
+  consequence: 美托洛尔浓度升高，心动过缓、低血压
+  suggestion: 联用时监测心率与血压，必要时减量
+  evidence_level: B
+
+- ing_a: 美托洛尔
+  ing_b: 帕罗西汀
+  severity: caution
+  mechanism: 帕罗西汀为 CYP2D6 强抑制剂，升高美托洛尔浓度
+  consequence: 心动过缓、低血压
+  suggestion: 联用时监测心率血压
+  evidence_level: B
+
+- ing_a: 比索洛尔
+  ing_b: 氟西汀
+  severity: monitor
+  mechanism: 比索洛尔部分经 CYP2D6 代谢，受影响小于美托洛尔
+  consequence: 影响轻微
+  suggestion: 监测心率
+  evidence_level: C
+
+- ing_a: 卡托普利
+  ing_b: 格列本脲
+  severity: monitor
+  mechanism: ACEI 增强胰岛素敏感性
+  consequence: 低血糖风险轻度增加
+  suggestion: 联用初期监测血糖
+  evidence_level: C

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 联合用药安全评估</title>
+<meta name="description" content="基于规则引擎 + RAG + 大模型的联合用药相互作用风险分级工具">
+<!-- 明文引用第三方资源会拖慢首屏并泄漏访问者 IP，本页不引任何外部资源 -->
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">Rx</span>
+      <div>
+        <h1>AI 联合用药安全评估</h1>
+        <p class="brand-sub">规则引擎硬拦截 · 检索增强解释 · 全程可溯源</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="theme-toggle" class="btn btn-ghost btn-sm" type="button"
+              aria-label="切换深浅色">深浅色</button>
+      <span id="health-badge" class="badge badge-muted" title="服务状态">检查中…</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap layout">
+
+  <!-- ══════════ 左栏：输入 ══════════ -->
+  <section class="panel" aria-labelledby="input-heading">
+    <h2 id="input-heading" class="panel-title">用药信息</h2>
+
+    <!-- 药品 -->
+    <div class="field">
+      <label for="drug-input" class="label">
+        药品名称
+        <span class="label-hint">商品名、通用名、拼音都可以</span>
+      </label>
+      <div class="input-row">
+        <input id="drug-input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="例如：芬必得、华法林钠片、阿司匹林肠溶片"
+               aria-describedby="drug-help">
+        <button id="drug-add" class="btn btn-secondary" type="button">添加</button>
+      </div>
+      <p id="drug-help" class="help">
+        输入后按回车添加。系统会立刻识别并显示匹配到的药品，
+        <strong>识别不确定时会让你确认，不会自己猜</strong>。
+      </p>
+      <div id="drug-chips" class="chips" role="list" aria-live="polite"></div>
+      <p id="drug-empty" class="empty">还没有添加药品。至少需要 2 种才能评估相互作用。</p>
+    </div>
+
+    <!-- 患者画像 -->
+    <div class="field">
+      <h3 class="subhead">
+        患者情况
+        <span class="label-hint">选填，但填了才能触发人群禁忌规则</span>
+      </h3>
+
+      <div class="grid-2">
+        <div class="field-sm">
+          <label for="p-age" class="label-sm">年龄</label>
+          <input id="p-age" type="number" min="1" max="129" placeholder="岁">
+        </div>
+        <div class="field-sm">
+          <label for="p-sex" class="label-sm">性别</label>
+          <select id="p-sex">
+            <option value="">未填</option>
+            <option value="male">男</option>
+            <option value="female">女</option>
+          </select>
+        </div>
+        <div class="field-sm">
+          <label for="p-hepatic" class="label-sm">肝功能</label>
+          <select id="p-hepatic">
+            <option value="normal">正常</option>
+            <option value="mild">轻度不全</option>
+            <option value="moderate">中度不全</option>
+            <option value="severe">重度不全</option>
+          </select>
+        </div>
+        <div class="field-sm">
+          <label for="p-renal" class="label-sm">肾功能</label>
+          <select id="p-renal">
+            <option value="normal">正常</option>
+            <option value="mild">轻度不全</option>
+            <option value="moderate">中度不全</option>
+            <option value="severe">重度不全</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-sm">
+        <label for="p-allergies" class="label-sm">过敏史</label>
+        <input id="p-allergies" type="text" autocomplete="off"
+               placeholder="多个用顿号或逗号分隔，例如：青霉素、磺胺">
+      </div>
+
+      <label class="check">
+        <input id="p-pregnancy" type="checkbox">
+        <span>妊娠期 / 哺乳期</span>
+      </label>
+    </div>
+
+    <!-- 选项 -->
+    <details class="advanced">
+      <summary>高级选项</summary>
+      <label class="check">
+        <input id="opt-llm" type="checkbox" checked>
+        <span>启用大模型解释<small>关闭则只返回规则引擎结论，更快</small></span>
+      </label>
+      <label class="check">
+        <input id="opt-rag" type="checkbox" checked>
+        <span>启用检索增强<small>为已知风险找回可引用的原文片段</small></span>
+      </label>
+    </details>
+
+    <div class="actions">
+      <button id="assess-btn" class="btn btn-primary btn-block" type="button" disabled>
+        开始评估
+      </button>
+      <button id="reset-btn" class="btn btn-ghost btn-block" type="button">清空</button>
+    </div>
+  </section>
+
+  <!-- ══════════ 右栏：结果 ══════════ -->
+  <section class="panel panel-result" aria-labelledby="result-heading">
+    <h2 id="result-heading" class="panel-title">评估结果</h2>
+
+    <!-- 空态 -->
+    <div id="state-idle" class="state">
+      <p class="state-title">等待输入</p>
+      <p class="state-body">在左侧添加 2 种以上药品后点击「开始评估」。</p>
+    </div>
+
+    <!-- 加载态 -->
+    <div id="state-loading" class="state" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="state-title">评估中…</p>
+      <p class="state-body" id="loading-hint">正在做相互作用匹配</p>
+    </div>
+
+    <!-- 错误态 -->
+    <div id="state-error" class="state state-error" hidden role="alert">
+      <p class="state-title">评估失败</p>
+      <p class="state-body" id="error-msg"></p>
+    </div>
+
+    <!-- 结果 -->
+    <div id="state-result" hidden>
+
+      <!-- 总体风险横幅 -->
+      <div id="verdict" class="verdict" role="status">
+        <span id="verdict-icon" class="verdict-icon" aria-hidden="true"></span>
+        <div class="verdict-text">
+          <p id="verdict-level" class="verdict-level"></p>
+          <p id="verdict-sub" class="verdict-sub"></p>
+        </div>
+      </div>
+
+      <!-- 降级说明 -->
+      <div id="degraded" class="notice notice-info" hidden>
+        <span class="notice-icon" aria-hidden="true">ℹ</span>
+        <p id="degraded-msg"></p>
+      </div>
+
+      <!-- 识别结果 -->
+      <details class="section" id="sec-drugs">
+        <summary class="section-head">
+          识别到的药品 <span id="drug-count" class="count"></span>
+        </summary>
+        <div id="drug-resolved" class="resolved"></div>
+      </details>
+
+      <!-- 风险列表 -->
+      <div class="section">
+        <h3 class="section-head-static">
+          风险明细 <span id="risk-count" class="count"></span>
+        </h3>
+        <div id="risk-list"></div>
+        <p id="risk-none" class="empty" hidden>未发现已收录的相互作用。</p>
+      </div>
+
+      <!-- 摘要 -->
+      <div class="section" id="sec-summary" hidden>
+        <h3 class="section-head-static">综合建议</h3>
+        <p id="summary-text" class="prose"></p>
+        <p id="patient-note" class="prose prose-note" hidden></p>
+      </div>
+
+      <!-- 免责声明 -->
+      <div id="disclaimer" class="disclaimer"></div>
+
+      <!-- 元信息 -->
+      <details class="meta">
+        <summary>本次评估的技术细节</summary>
+        <dl id="meta-list" class="meta-list"></dl>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap footer">
+  <p>
+    <strong>本工具为辅助评估工具，不能替代医师诊断与处方。</strong>
+    当前规则库为待审核的草稿数据，未经执业药师核验，不得用于真实用药决策。
+  </p>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

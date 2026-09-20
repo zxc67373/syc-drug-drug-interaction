@@ -1,0 +1,347 @@
+# ⚠️ 全部规则 status=draft，未经执业药师核验前不得 published。
+#
+# 【excerpt 字段的诚实声明】
+# 下列 excerpt 为**依据说明书/指南内容整理的要义转述**，不是逐字原文摘录。
+# 上线前必须逐条对照纸质/官方电子说明书，把 excerpt 换成可核验的原文，
+# 并把 reviewer 填进 reviewed_by。这是"可溯源"能成立的前提，不能含糊。
+#
+# 分级标准：contraindicated=禁忌（禁止联用）｜caution=慎用（需调整/加强监测）｜monitor=关注
+
+# ── 抗凝药 × 抗血小板药 ─────────────────────────────
+- ing_a: 华法林
+  ing_b: 阿司匹林
+  severity: contraindicated
+  mechanism: 抗凝作用与血小板功能抑制叠加；阿司匹林还可置换华法林的血浆蛋白结合，使游离华法林浓度升高
+  consequence: 出血风险显著增加，以消化道出血和颅内出血最为危险
+  suggestion: 避免联用。确需抗栓治疗时由心内科评估，改用其他方案并严密监测 INR 与出血征象
+  evidence_level: A
+  sources:
+    - title: 华法林钠片说明书
+      type: 说明书
+      excerpt: 与阿司匹林等抗血小板药物合用可增加出血风险，合用时应密切监测凝血酶原时间及出血症状。
+
+- ing_a: 华法林
+  ing_b: 氯吡格雷
+  severity: caution
+  mechanism: 抗凝与抗血小板机制叠加，止血功能双重受损
+  consequence: 出血事件（尤其消化道出血）风险升高
+  suggestion: 仅在明确适应证（如机械瓣膜合并支架）下由专科医师联用，联用期间加用胃黏膜保护并缩短监测间隔
+  evidence_level: B
+  sources:
+    - title: 华法林钠片说明书
+      type: 说明书
+      excerpt: 与抗血小板药合用时出血风险增加，应权衡获益与风险。
+
+- ing_a: 华法林
+  ing_b: 替格瑞洛
+  severity: caution
+  mechanism: 强效 P2Y12 抑制叠加抗凝作用，出血风险叠加
+  consequence: 大出血风险升高
+  suggestion: 避免长期联用；必须联用时监测血红蛋白与 INR，并评估胃黏膜保护
+  evidence_level: B
+
+# ── 抗凝药 × NSAIDs ─────────────────────────────────
+- ing_a: 华法林
+  ing_b: 布洛芬
+  severity: contraindicated
+  mechanism: NSAIDs 抑制血小板聚集并损伤胃黏膜屏障；同时可竞争血浆蛋白结合位点，升高游离华法林浓度
+  consequence: 消化道出血风险成倍增加
+  suggestion: 避免联用。需镇痛时优先选择对乙酰氨基酚，并控制剂量与疗程
+  evidence_level: A
+  sources:
+    - title: 华法林钠片说明书
+      type: 说明书
+      excerpt: 与 NSAIDs 合用可增加胃肠道出血风险，应避免或谨慎使用。
+
+- ing_a: 华法林
+  ing_b: 双氯芬酸
+  severity: contraindicated
+  mechanism: 同 NSAIDs 类机制：血小板抑制 + 胃黏膜损伤 + 蛋白结合置换
+  consequence: 消化道出血、INR 升高
+  suggestion: 避免联用，改用对乙酰氨基酚
+  evidence_level: A
+
+- ing_a: 华法林
+  ing_b: 吲哚美辛
+  severity: contraindicated
+  mechanism: 吲哚美辛胃肠道刺激性在 NSAIDs 中尤为突出，叠加抗凝作用
+  consequence: 严重消化道出血
+  suggestion: 禁止联用
+  evidence_level: A
+
+- ing_a: 华法林
+  ing_b: 塞来昔布
+  severity: caution
+  mechanism: 选择性 COX-2 抑制剂对血小板影响较小，但仍有消化道损伤与出血风险
+  consequence: 出血风险中度升高
+  suggestion: 短期最低有效剂量使用，监测 INR 与消化道症状
+  evidence_level: B
+
+# ── 华法林 × 抗菌药（CYP2C9 / 肠道菌群途径）────────
+- ing_a: 华法林
+  ing_b: 甲硝唑
+  severity: contraindicated
+  mechanism: 甲硝唑强力抑制 CYP2C9，显著减慢 S-华法林代谢；同时抑制肠道产维生素 K 菌群
+  consequence: INR 急剧升高，出血风险大幅增加
+  suggestion: 避免联用。必须使用时华法林减量 30%–50% 并每 2–3 天监测 INR
+  evidence_level: A
+  sources:
+    - title: 甲硝唑片说明书
+      type: 说明书
+      excerpt: 可增强华法林的抗凝作用，合用时须调整华法林剂量并监测凝血功能。
+
+- ing_a: 华法林
+  ing_b: 氟康唑
+  severity: contraindicated
+  mechanism: 氟康唑为 CYP2C9 强抑制剂，显著抑制华法林代谢
+  consequence: INR 显著升高，出血风险高
+  suggestion: 避免联用；确需抗真菌治疗时选用对 CYP2C9 影响小的药物
+  evidence_level: A
+  sources:
+    - title: 氟康唑胶囊说明书
+      type: 说明书
+      excerpt: 氟康唑可增强华法林的抗凝作用，合用时应严密监测凝血酶原时间。
+
+- ing_a: 华法林
+  ing_b: 克拉霉素
+  severity: caution
+  mechanism: 克拉霉素抑制 CYP3A4，对华法林代谢有间接影响
+  consequence: INR 可能升高
+  suggestion: 联用时加强 INR 监测，必要时减量
+  evidence_level: B
+
+- ing_a: 华法林
+  ing_b: 左氧氟沙星
+  severity: caution
+  mechanism: 喹诺酮类可抑制华法林代谢并影响肠道菌群维生素 K 合成
+  consequence: INR 升高，出血风险增加
+  suggestion: 联用时监测 INR
+  evidence_level: B
+
+- ing_a: 华法林
+  ing_b: 阿莫西林
+  severity: monitor
+  mechanism: 广谱抗生素抑制肠道菌群，减少维生素 K 合成
+  consequence: 抗凝作用可能增强
+  suggestion: 疗程超过 5 天时复查 INR
+  evidence_level: C
+
+- ing_a: 华法林
+  ing_b: 头孢曲松
+  severity: monitor
+  mechanism: 头孢曲松经胆汁排泄并抑制肠道菌群，影响维生素 K 循环
+  consequence: 抗凝作用可能增强
+  suggestion: 监测 INR
+  evidence_level: C
+
+# ── 华法林 × 酶诱导剂（抗凝不足）────────────────────
+- ing_a: 华法林
+  ing_b: 利福平
+  severity: caution
+  mechanism: 利福平为强效肝药酶诱导剂，加速华法林代谢
+  consequence: 抗凝作用减弱，INR 下降，血栓风险升高；停用利福平后 INR 又会反跳升高
+  suggestion: 联用期间需显著增加华法林剂量并频繁监测；利福平停用后 2–4 周内密切复查 INR
+  evidence_level: A
+  sources:
+    - title: 利福平胶囊说明书
+      type: 说明书
+      excerpt: 利福平可诱导肝药酶，加速华法林代谢，合用时需调整华法林剂量。
+
+- ing_a: 华法林
+  ing_b: 卡马西平
+  severity: caution
+  mechanism: 卡马西平诱导 CYP 酶系，加速华法林代谢
+  consequence: 抗凝作用减弱
+  suggestion: 联用及停用时均需重新滴定华法林剂量并监测 INR
+  evidence_level: B
+
+- ing_a: 华法林
+  ing_b: 苯妥英钠
+  severity: caution
+  mechanism: 早期竞争代谢使华法林作用增强，长期诱导酶使作用减弱，呈双相变化
+  consequence: INR 波动难以预测
+  suggestion: 尽量避免联用；必须联用时高频监测 INR 并个体化调整
+  evidence_level: B
+
+# ── 华法林 × 其他 ───────────────────────────────────
+- ing_a: 华法林
+  ing_b: 胺碘酮
+  severity: caution
+  mechanism: 胺碘酮抑制 CYP2C9，减慢华法林代谢；其活性代谢物半衰期极长（可达数月）
+  consequence: INR 逐步升高，且停用胺碘酮后影响仍持续数周至数月
+  suggestion: 联用时华法林起始减量 30%–50%，前 2 周每周监测 INR，之后每 2–4 周复查
+  evidence_level: A
+  sources:
+    - title: 盐酸胺碘酮片说明书
+      type: 说明书
+      excerpt: 胺碘酮可增强华法林的抗凝作用，合用时应减量并密切监测凝血酶原时间。
+
+- ing_a: 华法林
+  ing_b: 左甲状腺素钠
+  severity: monitor
+  mechanism: 甲状腺激素加速维生素 K 依赖性凝血因子分解代谢
+  consequence: 抗凝作用增强
+  suggestion: 甲状腺素剂量调整期监测 INR
+  evidence_level: C
+
+- ing_a: 华法林
+  ing_b: 对乙酰氨基酚
+  severity: monitor
+  mechanism: 大剂量（>2g/日，连续数日）对乙酰氨基酚可影响凝血因子合成
+  consequence: INR 轻度升高
+  suggestion: 短期常规剂量安全；连续大剂量使用时监测 INR
+  evidence_level: C
+
+- ing_a: 华法林
+  ing_b: 别嘌醇
+  severity: monitor
+  mechanism: 别嘌醇可能抑制华法林代谢
+  consequence: 抗凝作用可能增强
+  suggestion: 联用初期监测 INR
+  evidence_level: C
+
+# ── 新型口服抗凝药（NOAC）────────────────────────────
+- ing_a: 利伐沙班
+  ing_b: 阿司匹林
+  severity: caution
+  mechanism: 抗凝与抗血小板机制叠加
+  consequence: 出血风险增加
+  suggestion: 仅在明确适应证下联用，评估 HAS-BLED 评分后决定疗程
+  evidence_level: B
+
+- ing_a: 利伐沙班
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: NSAIDs 抑制血小板并损伤胃黏膜，叠加抗凝作用
+  consequence: 消化道出血风险升高
+  suggestion: 避免长期联用；必要时加用 PPI 保护胃黏膜
+  evidence_level: B
+
+- ing_a: 利伐沙班
+  ing_b: 胺碘酮
+  severity: monitor
+  mechanism: 胺碘酮抑制 P-gp 与 CYP3A4，可能升高利伐沙班暴露量
+  consequence: 出血风险轻度升高
+  suggestion: 肾功能不全者尤需谨慎，监测出血征象
+  evidence_level: C
+
+- ing_a: 利伐沙班
+  ing_b: 克拉霉素
+  severity: caution
+  mechanism: 克拉霉素抑制 CYP3A4 与 P-gp，双重升高利伐沙班血药浓度
+  consequence: 出血风险显著增加
+  suggestion: 避免联用；确需抗感染时选用阿奇霉素等影响小的药物
+  evidence_level: B
+
+- ing_a: 利伐沙班
+  ing_b: 氟康唑
+  severity: caution
+  mechanism: 三唑类抗真菌药抑制 CYP3A4，升高利伐沙班暴露
+  consequence: 出血风险升高
+  suggestion: 避免联用或减量并密切观察
+  evidence_level: B
+
+- ing_a: 达比加群酯
+  ing_b: 阿司匹林
+  severity: caution
+  mechanism: 抗凝与抗血小板作用叠加
+  consequence: 出血风险增加
+  suggestion: 评估获益风险后联用，监测出血征象
+  evidence_level: B
+
+- ing_a: 达比加群酯
+  ing_b: 胺碘酮
+  severity: caution
+  mechanism: 胺碘酮抑制 P-糖蛋白，减少达比加群外排，使其血药浓度升高
+  consequence: 出血风险增加，肾功能不全者尤为明显
+  suggestion: 联用时达比加群减量（依肾功能），并评估出血风险
+  evidence_level: B
+
+- ing_a: 达比加群酯
+  ing_b: 克拉霉素
+  severity: caution
+  mechanism: 克拉霉素抑制 P-gp，升高达比加群暴露
+  consequence: 出血风险增加
+  suggestion: 避免联用或减量
+  evidence_level: B
+
+- ing_a: 达比加群酯
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: NSAIDs 叠加抗凝作用的出血风险
+  consequence: 消化道出血风险升高
+  suggestion: 避免长期联用
+  evidence_level: B
+
+# ── 抗血小板药之间 ───────────────────────────────────
+- ing_a: 阿司匹林
+  ing_b: 氯吡格雷
+  severity: monitor
+  mechanism: 双联抗血小板治疗（DAPT），作用于不同通路
+  consequence: 出血风险增加，但在急性冠脉综合征/支架术后为必需治疗
+  suggestion: 属常规治疗方案，需按指南限定疗程（通常 6–12 个月），并评估出血风险
+  evidence_level: A
+
+- ing_a: 阿司匹林
+  ing_b: 替格瑞洛
+  severity: monitor
+  mechanism: 双联抗血小板治疗
+  consequence: 出血风险增加，属预期治疗效应
+  suggestion: 按指南使用，监测出血征象
+  evidence_level: A
+
+- ing_a: 氯吡格雷
+  ing_b: 替格瑞洛
+  severity: contraindicated
+  mechanism: 两种 P2Y12 受体拮抗剂作用靶点相同，叠加无额外获益
+  consequence: 出血风险显著增加而抗栓获益不增加
+  suggestion: 禁止联用，二者择一
+  evidence_level: A
+
+- ing_a: 阿司匹林
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: 布洛芬竞争性占据血小板 COX-1 结合位点，削弱阿司匹林的不可逆抗血小板作用
+  consequence: 阿司匹林心血管保护作用被削弱；同时消化道出血风险增加
+  suggestion: 若必须使用，布洛芬应在阿司匹林后至少 2 小时服用，或改用对乙酰氨基酚
+  evidence_level: B
+  sources:
+    - title: 布洛芬缓释胶囊说明书
+      type: 说明书
+      excerpt: 布洛芬可能干扰低剂量阿司匹林的抗血小板作用，合用时应注意服药间隔。
+
+- ing_a: 替格瑞洛
+  ing_b: 布洛芬
+  severity: caution
+  mechanism: 抗血小板作用叠加，NSAIDs 损伤胃黏膜
+  consequence: 消化道出血风险升高
+  suggestion: 避免长期联用，必要时加用 PPI
+  evidence_level: B
+
+- ing_a: 氯吡格雷
+  ing_b: 奥美拉唑
+  severity: caution
+  mechanism: 奥美拉唑抑制 CYP2C19，阻碍氯吡格雷转化为活性代谢物
+  consequence: 氯吡格雷抗血小板作用减弱，心血管事件风险可能升高
+  suggestion: 改用对 CYP2C19 抑制较弱的泮托拉唑
+  evidence_level: B
+  sources:
+    - title: 硫酸氢氯吡格雷片说明书
+      type: 说明书
+      excerpt: 不推荐与奥美拉唑等强效 CYP2C19 抑制剂合用，如需使用 PPI 建议选择泮托拉唑。
+
+- ing_a: 氯吡格雷
+  ing_b: 泮托拉唑
+  severity: monitor
+  mechanism: 泮托拉唑对 CYP2C19 抑制弱，相互作用较小
+  consequence: 影响轻微
+  suggestion: 需联用 PPI 时优先选择泮托拉唑
+  evidence_level: B
+
+- ing_a: 阿司匹林
+  ing_b: 奥美拉唑
+  severity: monitor
+  mechanism: PPI 用于预防阿司匹林相关消化道损伤
+  consequence: 属保护性联用
+  suggestion: 有消化道溃疡史者建议联用 PPI 保护
+  evidence_level: A

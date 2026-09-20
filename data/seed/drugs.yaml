@@ -1,0 +1,445 @@
+# 成分与药品基础表
+#
+# ⚠️ 数据状态：draft。药品名、别名、规格用于检索归一化，属客观信息；
+#    但 approval_no（国药准字）等字段尚未逐条核验，标注为 null 的不要直接对外。
+#
+# 命名约定：name_cn 用【通用名】（说明书上的名字），别名/商品名放 aliases / trade_names。
+
+ingredients:
+  # ── 抗凝 / 抗血小板 ──────────────────────────────
+  - {name_cn: 华法林,     name_en: Warfarin,        atc: B01AA03, category: 抗凝药}
+  - {name_cn: 利伐沙班,   name_en: Rivaroxaban,     atc: B01AF01, category: 抗凝药}
+  - {name_cn: 达比加群酯, name_en: Dabigatran,      atc: B01AE07, category: 抗凝药}
+  - {name_cn: 阿司匹林,   name_en: Aspirin,         atc: B01AC06, category: 抗血小板药}
+  - {name_cn: 氯吡格雷,   name_en: Clopidogrel,     atc: B01AC04, category: 抗血小板药}
+  - {name_cn: 替格瑞洛,   name_en: Ticagrelor,      atc: B01AC24, category: 抗血小板药}
+
+  # ── 解热镇痛 / NSAIDs ────────────────────────────
+  - {name_cn: 对乙酰氨基酚, name_en: Paracetamol,   atc: N02BE01, category: 解热镇痛药}
+  - {name_cn: 布洛芬,     name_en: Ibuprofen,       atc: M01AE01, category: NSAIDs}
+  - {name_cn: 双氯芬酸,   name_en: Diclofenac,      atc: M01AB05, category: NSAIDs}
+  - {name_cn: 塞来昔布,   name_en: Celecoxib,       atc: M01AH01, category: NSAIDs}
+  - {name_cn: 吲哚美辛,   name_en: Indometacin,     atc: M01AB01, category: NSAIDs}
+
+  # ── 消化系统 ─────────────────────────────────────
+  - {name_cn: 奥美拉唑,   name_en: Omeprazole,      atc: A02BC01, category: 质子泵抑制剂}
+  - {name_cn: 泮托拉唑,   name_en: Pantoprazole,    atc: A02BC02, category: 质子泵抑制剂}
+  - {name_cn: 多潘立酮,   name_en: Domperidone,     atc: A03FA03, category: 促胃动力药}
+
+  # ── 心血管 ───────────────────────────────────────
+  - {name_cn: 阿托伐他汀, name_en: Atorvastatin,    atc: C10AA05, category: 他汀类}
+  - {name_cn: 辛伐他汀,   name_en: Simvastatin,     atc: C10AA01, category: 他汀类}
+  - {name_cn: 胺碘酮,     name_en: Amiodarone,      atc: C01BD01, category: 抗心律失常药}
+  - {name_cn: 地高辛,     name_en: Digoxin,         atc: C01AA05, category: 强心苷}
+  - {name_cn: 美托洛尔,   name_en: Metoprolol,      atc: C07AB02, category: β受体阻滞剂}
+  - {name_cn: 比索洛尔,   name_en: Bisoprolol,      atc: C07AB07, category: β受体阻滞剂}
+  - {name_cn: 硝苯地平,   name_en: Nifedipine,      atc: C08CA05, category: 钙通道阻滞剂}
+  - {name_cn: 氨氯地平,   name_en: Amlodipine,      atc: C08CA01, category: 钙通道阻滞剂}
+
+  # ── 降压 / 利尿 ──────────────────────────────────
+  - {name_cn: 卡托普利,   name_en: Captopril,       atc: C09AA01, category: ACEI}
+  - {name_cn: 依那普利,   name_en: Enalapril,       atc: C09AA02, category: ACEI}
+  - {name_cn: 氯沙坦钾,   name_en: Losartan,        atc: C09CA01, category: ARB}
+  - {name_cn: 缬沙坦,     name_en: Valsartan,       atc: C09CA03, category: ARB}
+  - {name_cn: 螺内酯,     name_en: Spironolactone,  atc: C03DA01, category: 保钾利尿剂}
+  - {name_cn: 氢氯噻嗪,   name_en: Hydrochlorothiazide, atc: C03AA03, category: 噻嗪类利尿剂}
+  - {name_cn: 呋塞米,     name_en: Furosemide,      atc: C03CA01, category: 袢利尿剂}
+
+  # ── 内分泌 / 代谢 ────────────────────────────────
+  - {name_cn: 二甲双胍,   name_en: Metformin,       atc: A10BA02, category: 双胍类降糖药}
+  - {name_cn: 格列本脲,   name_en: Glibenclamide,   atc: A10BB01, category: 磺脲类降糖药}
+  - {name_cn: 阿卡波糖,   name_en: Acarbose,        atc: A10BF01, category: α-糖苷酶抑制剂}
+  - {name_cn: 左甲状腺素钠, name_en: Levothyroxine, atc: H03AA01, category: 甲状腺激素}
+  - {name_cn: 泼尼松,     name_en: Prednisone,      atc: H02AB07, category: 糖皮质激素}
+  - {name_cn: 别嘌醇,     name_en: Allopurinol,     atc: M04AA01, category: 抗痛风药}
+  - {name_cn: 秋水仙碱,   name_en: Colchicine,      atc: M04AC01, category: 抗痛风药}
+
+  # ── 抗感染 ───────────────────────────────────────
+  - {name_cn: 克拉霉素,   name_en: Clarithromycin,  atc: J01FA09, category: 大环内酯类}
+  - {name_cn: 阿奇霉素,   name_en: Azithromycin,    atc: J01FA10, category: 大环内酯类}
+  - {name_cn: 甲硝唑,     name_en: Metronidazole,   atc: J01XD01, category: 硝基咪唑类}
+  - {name_cn: 左氧氟沙星, name_en: Levofloxacin,    atc: J01MA12, category: 喹诺酮类}
+  - {name_cn: 莫西沙星,   name_en: Moxifloxacin,    atc: J01MA14, category: 喹诺酮类}
+  - {name_cn: 氟康唑,     name_en: Fluconazole,     atc: J02AC01, category: 三唑类抗真菌药}
+  - {name_cn: 伊曲康唑,   name_en: Itraconazole,    atc: J02AC02, category: 三唑类抗真菌药}
+  - {name_cn: 利福平,     name_en: Rifampicin,      atc: J04AB02, category: 抗结核药}
+  - {name_cn: 异烟肼,     name_en: Isoniazid,       atc: J04AC01, category: 抗结核药}
+  - {name_cn: 阿莫西林,   name_en: Amoxicillin,     atc: J01CA04, category: 青霉素类}
+  - {name_cn: 头孢曲松,   name_en: Ceftriaxone,     atc: J01DD04, category: 头孢菌素类}
+
+  # ── 精神 / 神经 ──────────────────────────────────
+  - {name_cn: 舍曲林,     name_en: Sertraline,      atc: N06AB06, category: SSRI}
+  - {name_cn: 氟西汀,     name_en: Fluoxetine,      atc: N06AB03, category: SSRI}
+  - {name_cn: 帕罗西汀,   name_en: Paroxetine,      atc: N06AB05, category: SSRI}
+  - {name_cn: 文拉法辛,   name_en: Venlafaxine,     atc: N06AX16, category: SNRI}
+  - {name_cn: 曲马多,     name_en: Tramadol,        atc: N02AX02, category: 阿片类镇痛药}
+  - {name_cn: 吗啡,       name_en: Morphine,        atc: N02AA01, category: 阿片类镇痛药}
+  - {name_cn: 可待因,     name_en: Codeine,         atc: R05DA04, category: 阿片类镇痛药}
+  - {name_cn: 地西泮,     name_en: Diazepam,        atc: N05BA01, category: 苯二氮䓬类}
+  - {name_cn: 阿普唑仑,   name_en: Alprazolam,      atc: N05BA12, category: 苯二氮䓬类}
+  - {name_cn: 艾司唑仑,   name_en: Estazolam,       atc: N05CD04, category: 苯二氮䓬类}
+  - {name_cn: 唑吡坦,     name_en: Zolpidem,        atc: N05CF02, category: 非苯二氮䓬催眠药}
+  - {name_cn: 奥氮平,     name_en: Olanzapine,      atc: N05AH03, category: 抗精神病药}
+  - {name_cn: 氯氮平,     name_en: Clozapine,       atc: N05AH02, category: 抗精神病药}
+  - {name_cn: 卡马西平,   name_en: Carbamazepine,   atc: N03AF01, category: 抗癫痫药}
+  - {name_cn: 苯妥英钠,   name_en: Phenytoin,       atc: N03AB02, category: 抗癫痫药}
+  - {name_cn: 丙戊酸钠,   name_en: Valproate,       atc: N03AG01, category: 抗癫痫药}
+
+  # ── 呼吸 / 抗过敏 ────────────────────────────────
+  - {name_cn: 茶碱,       name_en: Theophylline,    atc: R03DA04, category: 支气管扩张药}
+  - {name_cn: 氯苯那敏,   name_en: Chlorphenamine,  atc: R06AB04, category: 抗组胺药}
+
+  # ── 免疫 / 其他 ──────────────────────────────────
+  - {name_cn: 环孢素,     name_en: Ciclosporin,     atc: L04AD01, category: 免疫抑制剂}
+
+
+drugs:
+  # ── 抗凝 / 抗血小板 ──────────────────────────────
+  - name_cn: 华法林钠片
+    aliases: [华法林]
+    dosage_form: 片剂
+    ingredients: [{name: 华法林, strength: 2.5mg}]
+  - name_cn: 利伐沙班片
+    aliases: [利伐沙班, 拜瑞妥]
+    trade_names: [拜瑞妥]
+    dosage_form: 片剂
+    ingredients: [{name: 利伐沙班, strength: 10mg}]
+  - name_cn: 达比加群酯胶囊
+    aliases: [达比加群酯, 达比加群, 泰毕全]
+    trade_names: [泰毕全]
+    dosage_form: 胶囊
+    ingredients: [{name: 达比加群酯, strength: 110mg}]
+  - name_cn: 阿司匹林肠溶片
+    aliases: [阿司匹林, 拜阿司匹灵, 乙酰水杨酸]
+    trade_names: [拜阿司匹灵]
+    dosage_form: 肠溶片
+    is_otc: 1
+    ingredients: [{name: 阿司匹林, strength: 100mg}]
+  - name_cn: 硫酸氢氯吡格雷片
+    aliases: [氯吡格雷, 波立维, 泰嘉]
+    trade_names: [波立维, 泰嘉]
+    dosage_form: 片剂
+    ingredients: [{name: 氯吡格雷, strength: 75mg}]
+  - name_cn: 替格瑞洛片
+    aliases: [替格瑞洛, 倍林达]
+    trade_names: [倍林达]
+    dosage_form: 片剂
+    ingredients: [{name: 替格瑞洛, strength: 90mg}]
+
+  # ── 解热镇痛 / NSAIDs ────────────────────────────
+  - name_cn: 对乙酰氨基酚片
+    aliases: [对乙酰氨基酚, 扑热息痛, 泰诺林, 必理通]
+    trade_names: [泰诺林, 必理通]
+    dosage_form: 片剂
+    is_otc: 1
+    ingredients: [{name: 对乙酰氨基酚, strength: 500mg}]
+  - name_cn: 布洛芬缓释胶囊
+    aliases: [布洛芬, 芬必得, 异丁苯丙酸]
+    trade_names: [芬必得]
+    dosage_form: 缓释胶囊
+    is_otc: 1
+    ingredients: [{name: 布洛芬, strength: 0.3g}]
+  - name_cn: 布洛芬片
+    aliases: [布洛芬]
+    dosage_form: 片剂
+    is_otc: 1
+    ingredients: [{name: 布洛芬, strength: 0.2g}]
+  - name_cn: 双氯芬酸钠缓释片
+    aliases: [双氯芬酸, 双氯芬酸钠, 扶他林, 英太青]
+    trade_names: [扶他林, 英太青]
+    dosage_form: 缓释片
+    ingredients: [{name: 双氯芬酸, strength: 75mg}]
+  - name_cn: 塞来昔布胶囊
+    aliases: [塞来昔布, 西乐葆]
+    trade_names: [西乐葆]
+    dosage_form: 胶囊
+    ingredients: [{name: 塞来昔布, strength: 200mg}]
+  - name_cn: 吲哚美辛肠溶片
+    aliases: [吲哚美辛, 消炎痛]
+    trade_names: [消炎痛]
+    dosage_form: 肠溶片
+    ingredients: [{name: 吲哚美辛, strength: 25mg}]
+
+  # ── 消化系统 ─────────────────────────────────────
+  - name_cn: 奥美拉唑肠溶胶囊
+    aliases: [奥美拉唑, 洛赛克]
+    trade_names: [洛赛克]
+    dosage_form: 肠溶胶囊
+    ingredients: [{name: 奥美拉唑, strength: 20mg}]
+  - name_cn: 泮托拉唑钠肠溶片
+    aliases: [泮托拉唑, 泮托拉唑钠, 潘妥洛克]
+    trade_names: [潘妥洛克]
+    dosage_form: 肠溶片
+    ingredients: [{name: 泮托拉唑, strength: 40mg}]
+  - name_cn: 多潘立酮片
+    aliases: [多潘立酮, 吗丁啉]
+    trade_names: [吗丁啉]
+    dosage_form: 片剂
+    is_otc: 1
+    ingredients: [{name: 多潘立酮, strength: 10mg}]
+
+  # ── 心血管 ───────────────────────────────────────
+  - name_cn: 阿托伐他汀钙片
+    aliases: [阿托伐他汀, 阿托伐他汀钙, 立普妥]
+    trade_names: [立普妥]
+    dosage_form: 片剂
+    ingredients: [{name: 阿托伐他汀, strength: 20mg}]
+  - name_cn: 辛伐他汀片
+    aliases: [辛伐他汀, 舒降之]
+    trade_names: [舒降之]
+    dosage_form: 片剂
+    ingredients: [{name: 辛伐他汀, strength: 20mg}]
+  - name_cn: 盐酸胺碘酮片
+    aliases: [胺碘酮, 可达龙]
+    trade_names: [可达龙]
+    dosage_form: 片剂
+    ingredients: [{name: 胺碘酮, strength: 0.2g}]
+  - name_cn: 地高辛片
+    aliases: [地高辛]
+    dosage_form: 片剂
+    ingredients: [{name: 地高辛, strength: 0.25mg}]
+  - name_cn: 酒石酸美托洛尔片
+    aliases: [美托洛尔, 倍他乐克]
+    trade_names: [倍他乐克]
+    dosage_form: 片剂
+    ingredients: [{name: 美托洛尔, strength: 25mg}]
+  - name_cn: 富马酸比索洛尔片
+    aliases: [比索洛尔, 康忻]
+    trade_names: [康忻]
+    dosage_form: 片剂
+    ingredients: [{name: 比索洛尔, strength: 5mg}]
+  - name_cn: 硝苯地平控释片
+    aliases: [硝苯地平, 拜新同]
+    trade_names: [拜新同]
+    dosage_form: 控释片
+    ingredients: [{name: 硝苯地平, strength: 30mg}]
+  - name_cn: 苯磺酸氨氯地平片
+    aliases: [氨氯地平, 络活喜]
+    trade_names: [络活喜]
+    dosage_form: 片剂
+    ingredients: [{name: 氨氯地平, strength: 5mg}]
+
+  # ── 降压 / 利尿 ──────────────────────────────────
+  - name_cn: 卡托普利片
+    aliases: [卡托普利, 开博通]
+    trade_names: [开博通]
+    dosage_form: 片剂
+    ingredients: [{name: 卡托普利, strength: 25mg}]
+  - name_cn: 马来酸依那普利片
+    aliases: [依那普利, 悦宁定]
+    trade_names: [悦宁定]
+    dosage_form: 片剂
+    ingredients: [{name: 依那普利, strength: 10mg}]
+  - name_cn: 氯沙坦钾片
+    aliases: [氯沙坦钾, 氯沙坦, 科素亚]
+    trade_names: [科素亚]
+    dosage_form: 片剂
+    ingredients: [{name: 氯沙坦钾, strength: 50mg}]
+  - name_cn: 缬沙坦胶囊
+    aliases: [缬沙坦, 代文]
+    trade_names: [代文]
+    dosage_form: 胶囊
+    ingredients: [{name: 缬沙坦, strength: 80mg}]
+  - name_cn: 螺内酯片
+    aliases: [螺内酯, 安体舒通]
+    trade_names: [安体舒通]
+    dosage_form: 片剂
+    ingredients: [{name: 螺内酯, strength: 20mg}]
+  - name_cn: 氢氯噻嗪片
+    aliases: [氢氯噻嗪, 双氢克尿噻]
+    dosage_form: 片剂
+    ingredients: [{name: 氢氯噻嗪, strength: 25mg}]
+  - name_cn: 呋塞米片
+    aliases: [呋塞米, 速尿]
+    trade_names: [速尿]
+    dosage_form: 片剂
+    ingredients: [{name: 呋塞米, strength: 20mg}]
+
+  # ── 内分泌 / 代谢 ────────────────────────────────
+  - name_cn: 盐酸二甲双胍片
+    aliases: [二甲双胍, 格华止]
+    trade_names: [格华止]
+    dosage_form: 片剂
+    ingredients: [{name: 二甲双胍, strength: 0.5g}]
+  - name_cn: 格列本脲片
+    aliases: [格列本脲, 优降糖]
+    trade_names: [优降糖]
+    dosage_form: 片剂
+    ingredients: [{name: 格列本脲, strength: 2.5mg}]
+  - name_cn: 阿卡波糖片
+    aliases: [阿卡波糖, 拜唐苹]
+    trade_names: [拜唐苹]
+    dosage_form: 片剂
+    ingredients: [{name: 阿卡波糖, strength: 50mg}]
+  - name_cn: 左甲状腺素钠片
+    aliases: [左甲状腺素钠, 左甲状腺素, 优甲乐]
+    trade_names: [优甲乐]
+    dosage_form: 片剂
+    ingredients: [{name: 左甲状腺素钠, strength: 50μg}]
+  - name_cn: 醋酸泼尼松片
+    aliases: [泼尼松, 强的松]
+    trade_names: [强的松]
+    dosage_form: 片剂
+    ingredients: [{name: 泼尼松, strength: 5mg}]
+  - name_cn: 别嘌醇片
+    aliases: [别嘌醇]
+    dosage_form: 片剂
+    ingredients: [{name: 别嘌醇, strength: 0.1g}]
+  - name_cn: 秋水仙碱片
+    aliases: [秋水仙碱]
+    dosage_form: 片剂
+    ingredients: [{name: 秋水仙碱, strength: 0.5mg}]
+
+  # ── 抗感染 ───────────────────────────────────────
+  - name_cn: 克拉霉素片
+    aliases: [克拉霉素, 克拉仙]
+    trade_names: [克拉仙]
+    dosage_form: 片剂
+    ingredients: [{name: 克拉霉素, strength: 0.25g}]
+  - name_cn: 阿奇霉素片
+    aliases: [阿奇霉素, 希舒美]
+    trade_names: [希舒美]
+    dosage_form: 片剂
+    ingredients: [{name: 阿奇霉素, strength: 0.25g}]
+  - name_cn: 甲硝唑片
+    aliases: [甲硝唑, 灭滴灵]
+    trade_names: [灭滴灵]
+    dosage_form: 片剂
+    ingredients: [{name: 甲硝唑, strength: 0.2g}]
+  - name_cn: 左氧氟沙星片
+    aliases: [左氧氟沙星, 可乐必妥]
+    trade_names: [可乐必妥]
+    dosage_form: 片剂
+    ingredients: [{name: 左氧氟沙星, strength: 0.5g}]
+  - name_cn: 盐酸莫西沙星片
+    aliases: [莫西沙星, 拜复乐]
+    trade_names: [拜复乐]
+    dosage_form: 片剂
+    ingredients: [{name: 莫西沙星, strength: 0.4g}]
+  - name_cn: 氟康唑胶囊
+    aliases: [氟康唑, 大扶康]
+    trade_names: [大扶康]
+    dosage_form: 胶囊
+    ingredients: [{name: 氟康唑, strength: 50mg}]
+  - name_cn: 伊曲康唑胶囊
+    aliases: [伊曲康唑, 斯皮仁诺]
+    trade_names: [斯皮仁诺]
+    dosage_form: 胶囊
+    ingredients: [{name: 伊曲康唑, strength: 0.1g}]
+  - name_cn: 利福平胶囊
+    aliases: [利福平]
+    dosage_form: 胶囊
+    ingredients: [{name: 利福平, strength: 0.15g}]
+  - name_cn: 异烟肼片
+    aliases: [异烟肼, 雷米封]
+    trade_names: [雷米封]
+    dosage_form: 片剂
+    ingredients: [{name: 异烟肼, strength: 0.1g}]
+  - name_cn: 阿莫西林胶囊
+    aliases: [阿莫西林, 阿莫仙]
+    trade_names: [阿莫仙]
+    dosage_form: 胶囊
+    ingredients: [{name: 阿莫西林, strength: 0.25g}]
+  - name_cn: 注射用头孢曲松钠
+    aliases: [头孢曲松, 头孢曲松钠, 罗氏芬]
+    trade_names: [罗氏芬]
+    dosage_form: 注射剂
+    ingredients: [{name: 头孢曲松, strength: 1.0g}]
+
+  # ── 精神 / 神经 ──────────────────────────────────
+  - name_cn: 盐酸舍曲林片
+    aliases: [舍曲林, 左洛复]
+    trade_names: [左洛复]
+    dosage_form: 片剂
+    ingredients: [{name: 舍曲林, strength: 50mg}]
+  - name_cn: 盐酸氟西汀胶囊
+    aliases: [氟西汀, 百优解]
+    trade_names: [百优解]
+    dosage_form: 胶囊
+    ingredients: [{name: 氟西汀, strength: 20mg}]
+  - name_cn: 盐酸帕罗西汀片
+    aliases: [帕罗西汀, 赛乐特]
+    trade_names: [赛乐特]
+    dosage_form: 片剂
+    ingredients: [{name: 帕罗西汀, strength: 20mg}]
+  - name_cn: 盐酸文拉法辛缓释胶囊
+    aliases: [文拉法辛, 怡诺思]
+    trade_names: [怡诺思]
+    dosage_form: 缓释胶囊
+    ingredients: [{name: 文拉法辛, strength: 75mg}]
+  - name_cn: 盐酸曲马多缓释片
+    aliases: [曲马多, 奇曼丁]
+    trade_names: [奇曼丁]
+    dosage_form: 缓释片
+    ingredients: [{name: 曲马多, strength: 0.1g}]
+  - name_cn: 硫酸吗啡缓释片
+    aliases: [吗啡, 美施康定]
+    trade_names: [美施康定]
+    dosage_form: 缓释片
+    ingredients: [{name: 吗啡, strength: 30mg}]
+  - name_cn: 磷酸可待因片
+    aliases: [可待因]
+    dosage_form: 片剂
+    ingredients: [{name: 可待因, strength: 30mg}]
+  - name_cn: 地西泮片
+    aliases: [地西泮, 安定]
+    trade_names: [安定]
+    dosage_form: 片剂
+    ingredients: [{name: 地西泮, strength: 2.5mg}]
+  - name_cn: 阿普唑仑片
+    aliases: [阿普唑仑, 佳静安定]
+    trade_names: [佳静安定]
+    dosage_form: 片剂
+    ingredients: [{name: 阿普唑仑, strength: 0.4mg}]
+  - name_cn: 艾司唑仑片
+    aliases: [艾司唑仑, 舒乐安定]
+    trade_names: [舒乐安定]
+    dosage_form: 片剂
+    ingredients: [{name: 艾司唑仑, strength: 1mg}]
+  - name_cn: 酒石酸唑吡坦片
+    aliases: [唑吡坦, 思诺思]
+    trade_names: [思诺思]
+    dosage_form: 片剂
+    ingredients: [{name: 唑吡坦, strength: 10mg}]
+  - name_cn: 奥氮平片
+    aliases: [奥氮平, 再普乐]
+    trade_names: [再普乐]
+    dosage_form: 片剂
+    ingredients: [{name: 奥氮平, strength: 5mg}]
+  - name_cn: 氯氮平片
+    aliases: [氯氮平]
+    dosage_form: 片剂
+    ingredients: [{name: 氯氮平, strength: 25mg}]
+  - name_cn: 卡马西平片
+    aliases: [卡马西平, 得理多]
+    trade_names: [得理多]
+    dosage_form: 片剂
+    ingredients: [{name: 卡马西平, strength: 0.1g}]
+  - name_cn: 苯妥英钠片
+    aliases: [苯妥英钠, 苯妥英]
+    dosage_form: 片剂
+    ingredients: [{name: 苯妥英钠, strength: 0.1g}]
+  - name_cn: 丙戊酸钠缓释片
+    aliases: [丙戊酸钠, 德巴金]
+    trade_names: [德巴金]
+    dosage_form: 缓释片
+    ingredients: [{name: 丙戊酸钠, strength: 0.5g}]
+
+  # ── 呼吸 / 抗过敏 ────────────────────────────────
+  - name_cn: 氨茶碱片
+    aliases: [茶碱, 氨茶碱]
+    dosage_form: 片剂
+    ingredients: [{name: 茶碱, strength: 0.1g}]
+  - name_cn: 马来酸氯苯那敏片
+    aliases: [氯苯那敏, 扑尔敏]
+    trade_names: [扑尔敏]
+    dosage_form: 片剂
+    is_otc: 1
+    ingredients: [{name: 氯苯那敏, strength: 4mg}]
+
+  # ── 免疫 / 其他 ──────────────────────────────────
+  - name_cn: 环孢素软胶囊
+    aliases: [环孢素, 新山地明]
+    trade_names: [新山地明]
+    dosage_form: 软胶囊
+    ingredients: [{name: 环孢素, strength: 25mg}]

@@ -1,0 +1,40 @@
+[project]
+name = "ddi"
+version = "0.1.0"
+description = "AI 联合用药安全评估系统 —— 规则引擎 + RAG + 大模型的 DDI 风险分级"
+requires-python = ">=3.11"
+
+dependencies = [
+    "flask>=3.0",
+    "flask-cors>=4.0",
+    "PyYAML>=6.0",
+    "rapidfuzz>=3.6",
+    "pypinyin>=0.51",
+    "anthropic>=0.40",
+    "numpy>=1.26",
+    "rank_bm25>=0.2.2",
+    # 向量检索用。注意：不管嵌入后端选 hash 还是 bge-m3 都要它 ——
+    # 它存的是向量索引，和"向量由谁生成"是两回事。
+    "faiss-cpu>=1.8",
+]
+
+[project.optional-dependencies]
+# m3e 嵌入模型（推荐）。CPU 版 torch 就够，不需要 CUDA。
+# 装完还要有模型权重：python scripts/fetch_model.py
+embed = ["torch>=2.0", "transformers>=4.30"]
+# bge-m3（可选）。比 m3e 重得多，本项目用不上它的长文本能力。
+bge = ["FlagEmbedding>=1.2"]
+# 生产部署：--prod 用的 WSGI 服务器
+prod = ["waitress>=3.0"]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

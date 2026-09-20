@@ -1,0 +1,84 @@
+# ══════════════════════════════════════════════════════════════
+#  AI 联合用药安全评估系统 —— 配置文件模板
+#
+#  用法：复制为 config.yaml，然后填上你的 api_key。
+#        config.yaml 已在 .gitignore 中，不会被提交。
+#
+#      cp config.example.yaml config.yaml
+#
+#  这个文件里是全部可调项，改完重启服务生效。
+# ══════════════════════════════════════════════════════════════
+
+llm:
+  # ★★★ 换供应商就改这一行 ★★★
+  #   minimax   MiniMax        https://api.minimax.cn/anthropic
+  #   deepseek  DeepSeek       https://api.deepseek.com/anthropic
+  #   qwen      通义千问        https://dashscope.aliyuncs.com/apps/anthropic
+  #   custom    任何 Anthropic 兼容端点（需自己填下面的 base_url 和 model）
+  #
+  # 三家都兼容 Anthropic 协议，所以换供应商不用改任何代码。
+  provider: minimax
+
+  # 你的密钥。只有这一个地方需要填。
+  # ⚠️ 不要提交到 git，不要发到聊天群里，不要贴进截图。
+  api_key: ""
+
+  # 下面两项留空 = 用 provider 的预设值。
+  # 只有当你要指向自建网关、或临时试某个模型时才需要填。
+  base_url: ""
+  model: ""
+
+  # 单次回复上限。解释文本很短，2048 足够。
+  max_tokens: 2048
+  timeout: 60
+
+  # 自适应思考：措辞质量更好，但实测同一请求延迟从 2.6s 涨到 8.5s。
+  # 本项目对延迟敏感（MVP 目标端到端 <5s），所以默认 false。
+  thinking: false
+
+  # 留空 = 不传该参数，用供应商默认值。
+  temperature:
+
+embed:
+  # 检索层用哪个嵌入模型。
+  #
+  #   m3e     ★ 推荐。中文语义嵌入，768 维，权重约 390MB。
+  #           只需 torch + transformers（本项目用原生 transformers 实现，
+  #           不依赖 sentence-transformers）。
+  #   bge-m3  多语言、长文本（8192 token）。权重约 2.2GB，要额外装
+  #           FlagEmbedding。本项目语料是中文短文本，用不上它的长文本能力。
+  #   hash    纯 numpy 兜底。**只做字面重合匹配，不是语义检索**，
+  #           仅用于没有模型权重时跑通链路和跑测试。
+  #
+  # 实测检索质量（同一套评测）：
+  #             Recall@5    MRR
+  #   hash        0.967     0.878
+  #   m3e         1.000     0.963
+  backend: m3e
+
+  # 权重目录。相对路径按项目根目录解析。
+  #
+  # 注意：models/ 已在 .gitignore 中，几百 MB 的权重不该进 git。
+  # 部署时二选一：
+  #   1. 从已有环境拷：cp -r <别处的>/m3e-base models/
+  #   2. 从 ModelScope 拉：python scripts/fetch_model.py
+  model_path: models/m3e-base
+
+database:
+  # SQLite 文件位置。相对路径按项目根目录解析。
+  # 由 scripts/load_seed.py 生成，可以随时删掉重建。
+  path: data/build/ddi.db
+
+api:
+  port: 5000
+  # 生产必须 false。true 会暴露调试器和堆栈信息。
+  debug: false
+
+  # 允许跨域访问 API 的前端来源。
+  # 前后端分开部署（不同域名）时必须写成前端的实际地址：
+  #   cors_origins: ["https://ddi.example.com"]
+  # 前后端同域（Nginx 反代 /api）时用不上，保持默认即可。
+  # "*" 只适合本机开发 —— 生产环境写 "*" 等于允许任何网站调用你的接口，
+  # 会被人白嫖大模型额度。
+  cors_origins:
+    - "*"
