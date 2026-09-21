@@ -128,6 +128,7 @@
     entry.matched = hit;
     entry.manual = true;      // 用户手动选的，不再提示"置信度低"
     renderChips();
+    syncAssessButton();
   }
 
   function renderChips() {
