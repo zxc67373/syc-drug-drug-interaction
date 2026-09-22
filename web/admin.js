@@ -79,12 +79,23 @@
   }
 
   function tryLogin(token) {
+    if (!token) { showLogin('请输入访问令牌'); return Promise.resolve(false); }
+    var btn = $('login-btn');
+    btn.disabled = true;
+    btn.textContent = '登录中…';
+    function done() { btn.disabled = false; btn.textContent = '登录'; }
     return fetch(API + '/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: token })
     }).then(function (res) {
-      if (res.ok) { setToken(token); showShell(); return true; }
+      if (res.ok) {
+        setToken(token);
+        showShell();
+        // 必须进默认标签页并拉数据，否则壳子是空的，看起来像“没登上”
+        switchTab((location.hash || '#rules').slice(1) || 'rules');
+        return true;
+      }
       return res.json().catch(function () { return {}; }).then(function (d) {
         showLogin(d.error || '登录失败');
         return false;
@@ -92,6 +103,30 @@
     }).catch(function () {
       showLogin('无法连接后端');
       return false;
+    }).then(function (r) { done(); return r; });
+  }
+
+  // ── 表格状态行：加载中 / 空 / 出错 ──────────
+  function tbodyState(tbody, colSpan, msg, kind) {
+    tbody.textContent = '';
+    var tr = el('tr');
+    var cls = 'is-state' + (kind ? ' is-' + kind : '');
+    var td = el('td', cls, msg);
+    td.colSpan = colSpan;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+
+  // 整行可点（按钮点击不触发）——扩大热区，少一次精确点按钮
+  function clickable(tr, open) {
+    tr.classList.add('is-clickable');
+    tr.tabIndex = 0;
+    tr.addEventListener('click', function (ev) {
+      if (ev.target && ev.target.closest && ev.target.closest('button')) return;
+      open();
+    });
+    tr.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(); }
     });
   }
 
@@ -138,10 +173,15 @@
   //  规则库
   // ════════════════════════════════════════
   var rulesPage = 1;
-  var currentRule = null;
+  var currentRule = null;   // 编辑态 = 规则对象；新建态 = null 且 creating=true
+  var creating = false;
+  var ingIndex = [];        // [{id, name_cn}] —— 成分选择器的数据源
 
   function loadRules(page) {
     rulesPage = page || 1;
+    var tbody = $('rule-table').querySelector('tbody');
+    tbodyState(tbody, 7, '加载中…', 'loading');
+    $('rule-pager').textContent = '';
     var params = new URLSearchParams({
       q: $('rule-q').value.trim(),
       severity: $('rule-severity').value,
@@ -150,15 +190,19 @@
       page_size: 20
     });
     api('/admin/rules?' + params).then(function (data) {
-      var tbody = $('rule-table').querySelector('tbody');
       tbody.textContent = '';
+      if (!data.items.length) {
+        tbodyState(tbody, 7, '没有符合条件的规则');
+        renderPager($('rule-pager'), data, loadRules);
+        return;
+      }
       data.items.forEach(function (r) {
         var tr = el('tr');
-        tr.appendChild(el('td', null, String(r.id)));
+        tr.appendChild(el('td', 'col-id', String(r.id)));
         var pair = el('td');
-        pair.appendChild(el('span', 'chip-name', r.ing_a_name));
-        pair.appendChild(el('span', null, ' + '));
-        pair.appendChild(el('span', 'chip-name', r.ing_b_name));
+        pair.appendChild(el('span', 'pair-name', r.ing_a_name));
+        pair.appendChild(el('span', 'pair-sep', '+'));
+        pair.appendChild(el('span', 'pair-name', r.ing_b_name));
         tr.appendChild(pair);
 
         var lv = LEVELS[r.severity] || LEVELS.monitor;
@@ -167,12 +211,13 @@
         tr.appendChild(sev);
 
         var st = el('td');
-        st.appendChild(el('span', 'badge ' + (r.status === 'published' ? 'badge-ok' : 'badge-muted'),
-          STATUS_CN[r.status] || r.status));
+        var stCls = r.status === 'published' ? 'badge-ok'
+                  : r.status === 'reviewed'  ? 'badge-accent' : 'badge-muted';
+        st.appendChild(el('span', 'badge ' + stCls, STATUS_CN[r.status] || r.status));
         tr.appendChild(st);
 
-        tr.appendChild(el('td', null, r.evidence_level || '—'));
-        tr.appendChild(el('td', null, String(r.source_count)));
+        tr.appendChild(el('td', 'col-mono', r.evidence_level || '—'));
+        tr.appendChild(el('td', 'col-mono', String(r.source_count)));
 
         var actions = el('td', 'col-actions');
         var viewBtn = el('button', 'btn btn-ghost btn-sm', '编辑');
@@ -180,26 +225,77 @@
         viewBtn.addEventListener('click', function () { openRule(r.id); });
         actions.appendChild(viewBtn);
         tr.appendChild(actions);
+
+        (function (rid) { clickable(tr, function () { openRule(rid); }); })(r.id);
         tbody.appendChild(tr);
       });
       renderPager($('rule-pager'), data, loadRules);
     }).catch(function (e) {
-      var tbody = $('rule-table').querySelector('tbody');
-      tbody.textContent = '';
-      var tr = el('tr');
-      var td = el('td', 'is-err');
-      td.colSpan = 7;
-      td.textContent = '加载失败：' + e.message;
-      tr.appendChild(td);
-      tbody.appendChild(tr);
+      tbodyState(tbody, 7, '加载失败：' + e.message, 'err');
     });
+  }
+
+  function loadIngIndex() {
+    // 成分全量拉一次（当前 66 条；上限 500，选择器用 datalist 前端过滤）
+    return api('/admin/ingredients?page_size=500').then(function (data) {
+      ingIndex = data.items || [];
+      var box = $('ing-options');
+      box.textContent = '';
+      ingIndex.forEach(function (i) {
+        var opt = document.createElement('option');
+        opt.value = i.name_cn;
+        if (i.category) opt.label = i.category;
+        box.appendChild(opt);
+      });
+      return ingIndex;
+    });
+  }
+
+  function resolveIng(name) {
+    var hit = ingIndex.filter(function (i) { return i.name_cn === name; })[0];
+    return hit ? hit.id : null;
+  }
+
+  function resetRuleForm() {
+    $('rule-f-severity').value = 'caution';
+    $('rule-f-status').value = 'draft';
+    $('rule-f-evidence').value = '';
+    $('rule-f-reviewed-by').value = '';
+    $('rule-f-mechanism').value = '';
+    $('rule-f-consequence').value = '';
+    $('rule-f-suggestion').value = '';
+    $('rule-pick-a').value = '';
+    $('rule-pick-b').value = '';
+    $('ing-new-name').value = '';
+    $('ing-new-cat').value = '';
+    $('ing-new-msg').textContent = '';
+  }
+
+  function newRule() {
+    creating = true;
+    currentRule = null;
+    resetRuleForm();
+    $('rule-editor').hidden = false;
+    $('rule-editor-title').textContent = '新建规则';
+    $('rule-pair-view').hidden = true;
+    $('rule-pair-pick').hidden = false;
+    $('rule-delete').hidden = true;
+    $('rule-sources').textContent = '';
+    setMsg('');
+    loadIngIndex().catch(function (e) { setMsg('成分列表加载失败：' + e.message, false); });
+    $('rule-pick-a').focus();
+    $('rule-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function openRule(id) {
     api('/admin/rules/' + id).then(function (r) {
+      creating = false;
       currentRule = r;
       $('rule-editor').hidden = false;
       $('rule-editor-title').textContent = '编辑规则 #' + r.id;
+      $('rule-pair-view').hidden = false;
+      $('rule-pair-pick').hidden = true;
+      $('rule-delete').hidden = false;
       $('rule-ing-a').textContent = r.ing_a_name;
       $('rule-ing-b').textContent = r.ing_b_name;
       $('rule-f-severity').value = r.severity;
@@ -237,7 +333,6 @@
   }
 
   function saveRule() {
-    if (!currentRule) return;
     var payload = {
       severity: $('rule-f-severity').value,
       status: $('rule-f-status').value,
@@ -247,6 +342,32 @@
       consequence: $('rule-f-consequence').value.trim() || null,
       suggestion: $('rule-f-suggestion').value.trim() || null
     };
+
+    if (creating) {
+      var na = $('rule-pick-a').value.trim();
+      var nb = $('rule-pick-b').value.trim();
+      if (!na || !nb) { setMsg('请填写两个成分', false); return; }
+      if (na === nb) { setMsg('成分对不能相同', false); return; }
+      var ida = resolveIng(na);
+      var idb = resolveIng(nb);
+      if (!ida || !idb) {
+        setMsg('成分「' + (!ida ? na : nb) + '」不在库中，请先用下方「快速新建成分」创建', false);
+        return;
+      }
+      payload.ing_a_id = ida;
+      payload.ing_b_id = idb;
+      api('/admin/rules', payload, 'POST')
+        .then(function (d) {
+          creating = false;
+          loadRules(1);
+          openRule(d.id);
+          setMsg('已创建并重载规则索引', true);
+        })
+        .catch(function (e) { setMsg('创建失败：' + e.message, false); });
+      return;
+    }
+
+    if (!currentRule) return;
     api('/admin/rules/' + currentRule.id, payload, 'PUT')
       .then(function () {
         setMsg('已保存并重载规则索引', true);
@@ -255,8 +376,31 @@
       .catch(function (e) { setMsg('保存失败：' + e.message, false); });
   }
 
+  function createIngredient() {
+    var name = $('ing-new-name').value.trim();
+    var msg = $('ing-new-msg');
+    if (!name) { msg.textContent = '请填成分名'; msg.className = 'editor-msg is-err'; return; }
+    api('/admin/ingredients', {
+      name_cn: name,
+      category: $('ing-new-cat').value.trim() || null
+    }, 'POST').then(function (d) {
+      msg.textContent = '已创建「' + d.name_cn + '」';
+      msg.className = 'editor-msg is-ok';
+      $('ing-new-name').value = '';
+      $('ing-new-cat').value = '';
+      return loadIngIndex();
+    }).then(function () {
+      // 自动填进还空着的那侧，少一次手动搜索
+      if (!$('rule-pick-a').value) $('rule-pick-a').value = name;
+      else if (!$('rule-pick-b').value) $('rule-pick-b').value = name;
+    }).catch(function (e) {
+      msg.textContent = '创建失败：' + e.message;
+      msg.className = 'editor-msg is-err';
+    });
+  }
+
   function deleteRule() {
-    if (!currentRule) return;
+    if (!currentRule || creating) return;
     var btn = $('rule-delete');
     if (btn.dataset.confirm !== '1') {
       btn.dataset.confirm = '1';
@@ -270,6 +414,7 @@
       .then(function () {
         $('rule-editor').hidden = true;
         currentRule = null;
+        creating = false;
         loadRules(rulesPage);
       })
       .catch(function (e) { setMsg('删除失败：' + e.message, false); });
@@ -282,27 +427,37 @@
 
   function loadDrugs(page) {
     drugsPage = page || 1;
+    var tbody = $('drug-table').querySelector('tbody');
+    tbodyState(tbody, 6, '加载中…', 'loading');
+    $('drug-pager').textContent = '';
     var params = new URLSearchParams({ q: $('drug-q').value.trim(), page: drugsPage, page_size: 20 });
     api('/admin/drugs?' + params).then(function (data) {
-      var tbody = $('drug-table').querySelector('tbody');
       tbody.textContent = '';
+      if (!data.items.length) {
+        tbodyState(tbody, 6, '没有符合条件的药品');
+        renderPager($('drug-pager'), data, loadDrugs);
+        return;
+      }
       data.items.forEach(function (d) {
         var tr = el('tr');
-        tr.appendChild(el('td', null, String(d.id)));
+        tr.appendChild(el('td', 'col-id', String(d.id)));
         tr.appendChild(el('td', null, d.name_cn));
         tr.appendChild(el('td', null, d.dosage_form || '—'));
         tr.appendChild(el('td', null, d.ingredients || '—'));
-        tr.appendChild(el('td', null, d.pinyin || '—'));
+        tr.appendChild(el('td', 'col-mono', d.pinyin || '—'));
         var actions = el('td', 'col-actions');
         var btn = el('button', 'btn btn-ghost btn-sm', '详情');
         btn.type = 'button';
         btn.addEventListener('click', function () { openDrug(d.id); });
         actions.appendChild(btn);
         tr.appendChild(actions);
+        (function (did) { clickable(tr, function () { openDrug(did); }); })(d.id);
         tbody.appendChild(tr);
       });
       renderPager($('drug-pager'), data, loadDrugs);
-    }).catch(function (e) { alert('加载药品失败：' + e.message); });
+    }).catch(function (e) {
+      tbodyState(tbody, 6, '加载失败：' + e.message, 'err');
+    });
   }
 
   function openDrug(id) {
@@ -319,11 +474,12 @@
       head.appendChild(close);
       box.appendChild(head);
 
+      var rows = box.appendChild(el('div', 'detail-rows'));
       function row(label, value) {
         var line = el('p');
-        line.appendChild(el('strong', null, label + '：'));
+        line.appendChild(el('strong', null, label));
         line.appendChild(el('span', null, value == null ? '—' : String(value)));
-        box.appendChild(line);
+        rows.appendChild(line);
       }
       row('ID', d.id);
       row('别名', (d.aliases || []).join('、') || '—');
@@ -344,6 +500,95 @@
       });
       box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }).catch(function (e) { alert('加载详情失败：' + e.message); });
+  }
+
+  // ── 新建药品：动态成分行（每行 = 名称 + 规格 + 删除）────
+  function addIngRow(name, strength) {
+    var row = el('div', 'ing-row');
+    var nameInput = el('input');
+    nameInput.type = 'text';
+    nameInput.className = 'ing-name';
+    nameInput.setAttribute('list', 'ing-options');
+    nameInput.placeholder = '成分名，如 阿莫西林';
+    nameInput.value = name || '';
+    var strInput = el('input');
+    strInput.type = 'text';
+    strInput.className = 'ing-strength';
+    strInput.placeholder = '规格（选填）';
+    strInput.maxLength = 50;
+    strInput.value = strength || '';
+    var rm = el('button', 'btn btn-ghost btn-sm ing-rm', '移除');
+    rm.type = 'button';
+    rm.addEventListener('click', function () {
+      row.remove();
+      if (!$('drug-ing-rows').children.length) addIngRow();
+    });
+    row.appendChild(nameInput);
+    row.appendChild(strInput);
+    row.appendChild(rm);
+    $('drug-ing-rows').appendChild(row);
+  }
+
+  function setDrugMsg(text, ok) {
+    var box = $('drug-editor-msg');
+    box.textContent = text || '';
+    box.className = 'editor-msg' + (text ? (ok ? ' is-ok' : ' is-err') : '');
+  }
+
+  function newDrug() {
+    $('drug-editor').hidden = false;
+    $('drug-detail').hidden = true;
+    $('drug-f-name').value = '';
+    $('drug-f-form').value = '';
+    $('drug-f-alias').value = '';
+    $('drug-f-trade').value = '';
+    $('drug-f-otc').checked = false;
+    $('drug-f-tcm').checked = false;
+    $('drug-ing-rows').textContent = '';
+    addIngRow();
+    setDrugMsg('');
+    loadIngIndex().catch(function (e) { setDrugMsg('成分列表加载失败：' + e.message, false); });
+    $('drug-f-name').focus();
+    $('drug-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function saveDrug() {
+    var name = $('drug-f-name').value.trim();
+    if (!name) { setDrugMsg('请填通用名', false); return; }
+
+    var ings = [];
+    Array.prototype.forEach.call($('drug-ing-rows').children, function (row) {
+      var n = row.querySelector('.ing-name').value.trim();
+      if (!n) return;
+      var s = row.querySelector('.ing-strength').value.trim();
+      var id = resolveIng(n);
+      var item = id ? { id: id } : { name: n };   // 没有的名字交给服务端自动创建
+      if (s) item.strength = s;
+      ings.push(item);
+    });
+    if (!ings.length) { setDrugMsg('至少关联一个成分', false); return; }
+
+    var payload = {
+      name_cn: name,
+      dosage_form: $('drug-f-form').value.trim() || null,
+      aliases: $('drug-f-alias').value.trim() || null,
+      trade_names: $('drug-f-trade').value.trim() || null,
+      is_otc: $('drug-f-otc').checked,
+      is_tcm: $('drug-f-tcm').checked,
+      ingredients: ings
+    };
+    api('/admin/drugs', payload, 'POST')
+      .then(function (d) {
+        setDrugMsg('已创建（id=' + d.id + '），归一化索引已重载', true);
+        loadDrugs(1);
+        loadIngIndex().catch(function () { /* 列表刷新失败不影响主流程 */ });
+        // 留在面板方便继续建下一条
+        $('drug-f-name').value = '';
+        $('drug-ing-rows').textContent = '';
+        addIngRow();
+        $('drug-f-name').focus();
+      })
+      .catch(function (e) { setDrugMsg('创建失败：' + e.message, false); });
   }
 
   function runMatchTest() {
@@ -399,12 +644,19 @@
 
   function loadLogs(page) {
     logsPage = page || 1;
+    var tbody = $('log-table').querySelector('tbody');
+    tbodyState(tbody, 7, '加载中…', 'loading');
+    $('log-pager').textContent = '';
     api('/admin/logs?page=' + logsPage + '&page_size=20').then(function (data) {
-      var tbody = $('log-table').querySelector('tbody');
       tbody.textContent = '';
+      if (!data.items.length) {
+        tbodyState(tbody, 7, '暂无评估记录');
+        renderPager($('log-pager'), data, loadLogs);
+        return;
+      }
       data.items.forEach(function (r) {
         var tr = el('tr');
-        tr.appendChild(el('td', null, (r.created_at || '').replace('T', ' ').slice(0, 19)));
+        tr.appendChild(el('td', 'col-mono', (r.created_at || '').replace('T', ' ').slice(0, 19)));
 
         var drugs = Array.isArray(r.drugs_raw) ? r.drugs_raw.join('、') : (r.drugs_raw || '');
         tr.appendChild(el('td', null, drugs));
@@ -415,10 +667,17 @@
           (r.overall_risk ? lv.icon + ' ' + lv.cn : '—')));
         tr.appendChild(risk);
 
-        tr.appendChild(el('td', null, r.hard_blocked ? '是' : '否'));
-        tr.appendChild(el('td', null, r.elapsed_ms != null ? r.elapsed_ms + 'ms' : '—'));
-        tr.appendChild(el('td', null,
+        var hb = el('td');
+        hb.appendChild(el('span', 'badge ' + (r.hard_blocked ? 'badge-critical' : 'badge-muted'),
+          r.hard_blocked ? '是' : '否'));
+        tr.appendChild(hb);
+
+        tr.appendChild(el('td', 'col-mono', r.elapsed_ms != null ? r.elapsed_ms + 'ms' : '—'));
+        var llm = el('td');
+        llm.appendChild(el('span', 'badge ' +
+          (r.used_llm == null ? 'badge-muted' : r.used_llm ? 'badge-ok' : 'badge-muted'),
           r.used_llm == null ? '—' : (r.used_llm ? '是' : '否')));
+        tr.appendChild(llm);
 
         var actions = el('td', 'col-actions');
         var btn = el('button', 'btn btn-ghost btn-sm', '详情');
@@ -426,10 +685,13 @@
         btn.addEventListener('click', function () { openLog(r.id); });
         actions.appendChild(btn);
         tr.appendChild(actions);
+        (function (lid) { clickable(tr, function () { openLog(lid); }); })(r.id);
         tbody.appendChild(tr);
       });
       renderPager($('log-pager'), data, loadLogs);
-    }).catch(function (e) { alert('加载日志失败：' + e.message); });
+    }).catch(function (e) {
+      tbodyState(tbody, 7, '加载失败：' + e.message, 'err');
+    });
   }
 
   function openLog(id) {
@@ -445,11 +707,12 @@
       head.appendChild(close);
       box.appendChild(head);
 
+      var rows = box.appendChild(el('div', 'detail-rows'));
       function row(label, value) {
         var line = el('p');
-        line.appendChild(el('strong', null, label + '：'));
+        line.appendChild(el('strong', null, label));
         line.appendChild(el('span', null, value == null ? '—' : String(value)));
-        box.appendChild(line);
+        rows.appendChild(line);
       }
       row('时间', r.created_at);
       row('总体风险', r.overall_risk || '—');
@@ -596,16 +859,27 @@
     $('rule-q').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') loadRules(1);
     });
+    $('rule-new').addEventListener('click', newRule);
     $('rule-editor-close').addEventListener('click', function () {
-      $('rule-editor').hidden = true; currentRule = null;
+      $('rule-editor').hidden = true; currentRule = null; creating = false;
     });
     $('rule-save').addEventListener('click', saveRule);
     $('rule-delete').addEventListener('click', deleteRule);
+    $('ing-new-save').addEventListener('click', createIngredient);
+    $('ing-new-name').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); createIngredient(); }
+    });
 
     $('drug-search').addEventListener('click', function () { loadDrugs(1); });
     $('drug-q').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') loadDrugs(1);
     });
+    $('drug-new').addEventListener('click', newDrug);
+    $('drug-editor-close').addEventListener('click', function () {
+      $('drug-editor').hidden = true;
+    });
+    $('drug-ing-add').addEventListener('click', function () { addIngRow(); });
+    $('drug-save').addEventListener('click', saveDrug);
     $('test-run').addEventListener('click', runMatchTest);
 
     $('config-form').addEventListener('submit', saveConfig);

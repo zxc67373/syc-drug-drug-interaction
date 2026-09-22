@@ -94,6 +94,74 @@ def login():
     return jsonify({"ok": True})
 
 
+# ── 成分（新建规则/药品时的选择器数据源）────────────────
+@admin_bp.get("/ingredients")
+@require_admin
+def ingredients_list():
+    q = (request.args.get("q") or "").strip()
+    page = max(1, int(request.args.get("page", 1)))
+    page_size = max(1, min(500, int(request.args.get("page_size", 200))))
+
+    where, params = "", []
+    if q:
+        where = " WHERE name_cn LIKE ? OR IFNULL(name_en, '') LIKE ?"
+        like = f"%{q}%"
+        params = [like, like]
+
+    import math
+
+    with session() as conn:
+        total = conn.execute(
+            f"SELECT COUNT(*) AS n FROM ingredient{where}", params
+        ).fetchone()["n"]
+        rows = conn.execute(
+            f"SELECT id, name_cn, name_en, category FROM ingredient{where}"
+            " ORDER BY name_cn LIMIT ? OFFSET ?",
+            params + [page_size, (page - 1) * page_size],
+        ).fetchall()
+
+    pages = max(1, math.ceil(total / page_size)) if total else 1
+    return jsonify({
+        "items": [dict(r) for r in rows],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    })
+
+
+@admin_bp.post("/ingredients")
+@require_admin
+def ingredient_create():
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _bad("请求体必须是 JSON 对象")
+    name = str(body.get("name_cn") or "").strip()
+    if not name:
+        return _bad("name_cn 不能为空")
+    if len(name) > 100:
+        return _bad("成分名超长（最多 100 字）")
+    name_en = str(body.get("name_en") or "").strip() or None
+    category = str(body.get("category") or "").strip() or None
+    if category and len(category) > 50:
+        return _bad("分类超长（最多 50 字）")
+
+    with session() as conn:
+        exists = conn.execute(
+            "SELECT id FROM ingredient WHERE name_cn = ?", (name,)
+        ).fetchone()
+        if exists:
+            return _bad(f"成分已存在（id={exists['id']}）", 409)
+        cur = conn.execute(
+            "INSERT INTO ingredient (name_cn, name_en, category) VALUES (?, ?, ?)",
+            (name, name_en, category),
+        )
+        new_id = int(cur.lastrowid)
+    # 成分本身不进内存索引（规则引擎按规则加载、归一化按药品加载），
+    # 真正生效是在它被挂上规则/药品之后的那次 reload。
+    return jsonify({"ok": True, "id": new_id, "name_cn": name}), 201
+
+
 # ── 规则库 ──────────────────────────────────────────────
 _RULES_SELECT = """
 SELECT r.id, r.ing_a_id, r.ing_b_id, r.severity, r.mechanism, r.consequence,
@@ -174,6 +242,63 @@ def rule_detail(rule_id: int):
     out = dict(row)
     out["sources"] = [dict(s) for s in sources]
     return jsonify(out)
+
+
+@admin_bp.post("/rules")
+@require_admin
+def rule_create():
+    """新建规则。成分对由服务端规范成 ing_a_id < ing_b_id（schema CHECK）。"""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _bad("请求体必须是 JSON 对象")
+
+    severity = body.get("severity")
+    if severity not in SEVERITIES:
+        return _bad(f"severity 必须是 {'/'.join(SEVERITIES)} 之一")
+
+    try:
+        id_a = int(body.get("ing_a_id"))
+        id_b = int(body.get("ing_b_id"))
+    except (TypeError, ValueError):
+        return _bad("ing_a_id / ing_b_id 必填且必须是整数")
+    if id_a == id_b:
+        return _bad("成分对不能是同一个成分")
+    # 小 id 在前 —— 与 UNIQUE(ing_a_id, ing_b_id) + CHECK 配套，选反了服务端兜底
+    id_a, id_b = sorted((id_a, id_b))
+
+    # 其余字段复用编辑校验；status 缺省走 schema 默认 draft
+    editable = {k: v for k, v in body.items() if k in _RULE_EDITABLE and k != "severity"}
+    updates, err = _validate_rule_body(editable) if editable else ({}, None)
+    if err and err != "没有可更新的字段":
+        return _bad(err)
+
+    cols = ["ing_a_id", "ing_b_id", "severity"] + sorted(updates)
+    vals: list[Any] = [id_a, id_b, severity] + [updates[k] for k in sorted(updates)]
+
+    with session() as conn:
+        for iid in (id_a, id_b):
+            if not conn.execute(
+                "SELECT 1 FROM ingredient WHERE id = ?", (iid,)
+            ).fetchone():
+                return _bad(f"成分不存在（id={iid}）", 404)
+        dup = conn.execute(
+            "SELECT id FROM ddi_rule WHERE ing_a_id = ? AND ing_b_id = ?",
+            (id_a, id_b),
+        ).fetchone()
+        if dup:
+            return _bad(f"该成分对已有规则 #{dup['id']}，请直接编辑它", 409)
+        try:
+            cur = conn.execute(
+                f"INSERT INTO ddi_rule ({', '.join(cols)})"
+                f" VALUES ({', '.join('?' * len(cols))})",
+                vals,
+            )
+        except Exception as e:  # noqa: BLE001 — SQLite CHECK 约束失败
+            return _bad(f"创建失败：{e}")
+        new_id = int(cur.lastrowid)
+
+    _svc().reload_rules()
+    return jsonify({"ok": True, "id": new_id}), 201
 
 
 def _validate_rule_body(body: dict) -> tuple[dict, str | None]:
@@ -325,6 +450,163 @@ def drug_detail(drug_id: int):
                 out[key] = []
     out["ingredients"] = [dict(i) for i in ings]
     return jsonify(out)
+
+
+def _json_str_list(val: Any, key: str) -> tuple[list[str] | None, str | None]:
+    """接受 JSON 数组或顿号/逗号分隔的字符串，归一化成去空列表。"""
+    if val in (None, ""):
+        return [], None
+    if isinstance(val, str):
+        items = [s.strip() for s in val.replace("，", "、").replace(",", "、").split("、")]
+    elif isinstance(val, list):
+        items = [str(s).strip() for s in val]
+    else:
+        return None, f"{key} 必须是数组或字符串"
+    items = [s for s in items if s]
+    if len(items) > 50:
+        return None, f"{key} 最多 50 项"
+    if any(len(s) > 100 for s in items):
+        return None, f"{key} 单项超长（最多 100 字）"
+    return items, None
+
+
+@admin_bp.post("/drugs")
+@require_admin
+def drug_create():
+    """新建药品并挂成分。成分按名字匹配，库里没有的自动创建 ——
+    后台加一个新药时成分往往也是新的，分两步徒增摩擦。"""
+    from ddi.db.loader import _pinyin
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _bad("请求体必须是 JSON 对象")
+
+    name = str(body.get("name_cn") or "").strip()
+    if not name:
+        return _bad("name_cn 不能为空")
+    if len(name) > 200:
+        return _bad("药名超长（最多 200 字）")
+    form = str(body.get("dosage_form") or "").strip() or None
+    if form and len(form) > 50:
+        return _bad("剂型超长（最多 50 字）")
+
+    trade, err = _json_str_list(body.get("trade_names"), "trade_names")
+    if err:
+        return _bad(err)
+    alias, err = _json_str_list(body.get("aliases"), "aliases")
+    if err:
+        return _bad(err)
+
+    raw_ings = body.get("ingredients")
+    if not isinstance(raw_ings, list) or not raw_ings:
+        return _bad("ingredients 必填：至少关联一个成分")
+    if len(raw_ings) > 30:
+        return _bad("成分最多 30 项")
+
+    # 先在事务外校验/解析每一条成分，避免写了一半才发现脏数据
+    parsed: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in raw_ings:
+        if not isinstance(item, dict):
+            return _bad("ingredients 每项必须是对象")
+        ing_id = item.get("id")
+        ing_name = str(item.get("name") or "").strip()
+        if ing_id is None and not ing_name:
+            return _bad("成分项需要 id 或 name")
+        if ing_name and len(ing_name) > 100:
+            return _bad("成分名超长（最多 100 字）")
+        strength = str(item.get("strength") or "").strip() or None
+        if strength and len(strength) > 50:
+            return _bad("规格超长（最多 50 字）")
+        category = str(item.get("category") or "").strip() or None
+        if category and len(category) > 50:
+            return _bad("成分分类超长（最多 50 字）")
+        key = f"id:{ing_id}" if ing_id is not None else f"name:{ing_name}"
+        if key in seen:
+            return _bad("成分重复")
+        seen.add(key)
+        parsed.append({
+            "id": ing_id, "name": ing_name, "strength": strength,
+            "category": category,
+        })
+
+    full_py, abbr_py = _pinyin(name)
+    is_otc = 1 if body.get("is_otc") else 0
+    is_tcm = 1 if body.get("is_tcm") else 0
+    approval = str(body.get("approval_no") or "").strip() or None
+
+    # session() 正常退出即 commit —— 所以所有能在校验里拦下的错误
+    # 必须在**任何写入之前**返回，否则中途 return 会把半截数据提交掉。
+    with session() as conn:
+        dup = conn.execute(
+            "SELECT id FROM drug WHERE name_cn = ? AND IFNULL(dosage_form, '') = IFNULL(?, '')",
+            (name, form),
+        ).fetchone()
+        if dup:
+            return _bad(f"同名同剂型药品已存在（id={dup['id']}）", 409)
+
+        # 解析阶段只读：已有的记 id，没有的攒起来待建。
+        # 同名重复已在 seen 里拦掉，to_create 里每个名字只出现一次。
+        resolved: list[tuple[int, str | None]] = []   # 负 id = 待建成分的占位
+        to_create: list[dict[str, Any]] = []
+        for p in parsed:
+            if p["id"] is not None:
+                row = conn.execute(
+                    "SELECT id FROM ingredient WHERE id = ?", (int(p["id"]),)
+                ).fetchone()
+                if not row:
+                    return _bad(f"成分不存在（id={p['id']}）", 404)
+                resolved.append((int(row["id"]), p["strength"]))
+            else:
+                row = conn.execute(
+                    "SELECT id FROM ingredient WHERE name_cn = ?", (p["name"],)
+                ).fetchone()
+                if row:
+                    resolved.append((int(row["id"]), p["strength"]))
+                else:
+                    to_create.append(p)
+                    resolved.append((-len(to_create), p["strength"]))
+
+        # ── 校验全部通过，开始写 ──
+        placeholders: dict[int, int] = {}
+        for p in to_create:
+            iid = int(conn.execute(
+                "INSERT INTO ingredient (name_cn, category) VALUES (?, ?)",
+                (p["name"], p["category"]),
+            ).lastrowid)
+            placeholders[len(placeholders) + 1] = iid
+
+        try:
+            drug_id = int(conn.execute(
+                """INSERT INTO drug (name_cn, trade_names, aliases, pinyin, pinyin_abbr,
+                                     dosage_form, is_otc, is_tcm, approval_no)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    name,
+                    json.dumps(trade, ensure_ascii=False),
+                    json.dumps(alias, ensure_ascii=False),
+                    full_py,
+                    abbr_py,
+                    form,
+                    is_otc,
+                    is_tcm,
+                    approval,
+                ),
+            ).lastrowid)
+        except Exception as e:  # noqa: BLE001 — UNIQUE(name_cn, dosage_form)
+            return _bad(f"创建失败：{e}")
+
+        for iid, strength in resolved:
+            if iid < 0:
+                iid = placeholders[-iid]
+            conn.execute(
+                "INSERT INTO drug_ingredient (drug_id, ingredient_id, strength)"
+                " VALUES (?, ?, ?)",
+                (drug_id, iid, strength),
+            )
+
+    _svc().reload_drugs()
+    return jsonify({"ok": True, "id": drug_id}), 201
 
 
 # ── 评估记录 ────────────────────────────────────────────

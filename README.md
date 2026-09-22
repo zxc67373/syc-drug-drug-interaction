@@ -100,10 +100,12 @@ python scripts/check_config.py --try deepseek   # 预览切换后的实际端点
 
 | 标签页 | 能力 | 接口 |
 |---|---|---|
-| 规则库 | 按严重度/状态筛选、搜索、编辑、删除规则，改动即时热重载 | `GET/PUT/DELETE /api/v1/admin/rules` |
-| 药品数据 | 搜索药品、查看成分明细、匹配测试 | `GET /api/v1/admin/drugs` |
+| 规则库 | 按严重度/状态筛选、搜索、**新建**（选成分对）、编辑、删除，改动即时热重载 | `GET/POST/PUT/DELETE /api/v1/admin/rules` |
+| 药品数据 | 搜索、**新建药品**（按名挂成分，库里没有的成分自动创建）、查看明细、匹配测试 | `GET/POST /api/v1/admin/drugs` |
 | 评估记录 | 查看每次评估的输入、风险分级、耗时、降级原因 | `GET /api/v1/admin/logs` |
 | 配置 | 改供应商/模型/密钥等，LLM 部分热替换，其余提示需重启 | `GET/PUT /api/v1/admin/config` |
+
+成分选择器的数据源是 `GET/POST /api/v1/admin/ingredients`（新建规则时也可直接快速创建成分）。
 
 **启用**：在 `config.yaml` 填 `admin.token`（留空 = 后台整体 403 禁用）：
 
@@ -113,7 +115,8 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 登录后令牌存在浏览器 `sessionStorage`，请求带 `Authorization: Bearer <token>`。
 密钥类字段（`llm.api_key`、`admin.token`）在 GET 配置时只回 `*_set: true`，**从不回显明文**。
-写规则、删规则后会自动调用 `reload_rules()` 重载内存引擎，无需重启服务。
+写/删规则后自动 `reload_rules()`，新建药品后自动 `reload_drugs()`，均无需重启服务。
+新建规则时成分对由服务端规范成 `ing_a_id < ing_b_id`，重复成分对返回 409。
 
 隐私边界：评估日志只存年龄/性别/肝肾/孕期等白名单字段，**过敏史原文永不落库**。
 

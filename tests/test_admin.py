@@ -10,7 +10,9 @@ from dataclasses import replace
 
 import pytest
 
-from tests.test_api import FakeLLM
+# 不写 `from tests.test_api import …`：机器上 /root/zhihu-cli/tests 是带
+# __init__.py 的正包，会遮住本目录的命名空间包，pytest 顶层导入才稳。
+from test_api import FakeLLM
 
 
 @pytest.fixture
@@ -104,6 +106,49 @@ class TestAuth:
         r = client.get("/api/v1/admin/rules",
                        headers={"X-Admin-Token": app.config["TEST_ADMIN_TOKEN"]})
         assert r.status_code == 200
+
+
+class TestIngredients:
+    def test_list_shape(self, client, auth):
+        r = client.get("/api/v1/admin/ingredients", headers=auth)
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["total"] > 0
+        assert {"id", "name_cn"} <= set(body["items"][0])
+
+    def test_search(self, client, auth):
+        r = client.get("/api/v1/admin/ingredients?q=华法林", headers=auth)
+        items = r.get_json()["items"]
+        assert items and items[0]["name_cn"] == "华法林"
+
+    @staticmethod
+    def _cleanup(seed_db, name):
+        from ddi.db.session import session as db_session
+
+        with db_session(seed_db) as c:
+            c.execute("DELETE FROM ingredient WHERE name_cn = ?", (name,))
+
+    def test_create_ok(self, client, auth, seed_db):
+        name = "ZZ测试成分"
+        self._cleanup(seed_db, name)  # session 级共享库，先清残留
+        r = client.post("/api/v1/admin/ingredients", headers=auth,
+                        json={"name_cn": name, "category": "测试"})
+        assert r.status_code == 201
+        body = r.get_json()
+        assert body["name_cn"] == name
+
+        got = client.get(f"/api/v1/admin/ingredients?q={name}", headers=auth)
+        assert got.get_json()["total"] == 1
+        self._cleanup(seed_db, name)
+
+    def test_create_duplicate_409(self, client, auth):
+        r = client.post("/api/v1/admin/ingredients", headers=auth,
+                        json={"name_cn": "华法林"})
+        assert r.status_code == 409
+
+    def test_create_requires_name(self, client, auth):
+        r = client.post("/api/v1/admin/ingredients", headers=auth, json={})
+        assert r.status_code == 400
 
 
 class TestRules:
@@ -213,6 +258,98 @@ class TestRules:
                              headers=auth).status_code == 200
         assert client.get(f"/api/v1/rules/{rid}").status_code == 404
 
+    # ── 创建 ─────────────────────────────────────────
+    @staticmethod
+    def _fresh_pair(client, auth, seed_db, suffix):
+        """造两个专用成分返回 (id_a, id_b)，并保证这对成分上没有既有规则。"""
+        ids = []
+        for n in (f"ZZ成{suffix}一", f"ZZ成{suffix}二"):
+            r = client.post("/api/v1/admin/ingredients", headers=auth,
+                            json={"name_cn": n})
+            if r.status_code == 201:
+                ids.append(r.get_json()["id"])
+            else:  # 残留：查出来复用
+                got = client.get(
+                    f"/api/v1/admin/ingredients?q={n}", headers=auth
+                ).get_json()["items"]
+                ids.append(got[0]["id"])
+        return tuple(ids)
+
+    @staticmethod
+    def _cleanup_pair(client, auth, seed_db, ids, names):
+        from ddi.db.session import session as db_session
+
+        with db_session(seed_db) as c:
+            for a, b in ((ids[0], ids[1]), (ids[1], ids[0])):
+                c.execute("DELETE FROM ddi_rule WHERE ing_a_id = ? AND ing_b_id = ?",
+                          (a, b))
+            for n in names:
+                c.execute("DELETE FROM ingredient WHERE name_cn = ?", (n,))
+        client.post("/api/v1/admin/reload", headers=auth)
+
+    def test_create_then_public_reflects(self, client, auth, seed_db):
+        names = ("ZZ成十一", "ZZ成十二")
+        ids = self._fresh_pair(client, auth, seed_db, "甲")
+        r = client.post("/api/v1/admin/rules", headers=auth, json={
+            "ing_a_id": ids[0], "ing_b_id": ids[1],
+            "severity": "caution", "mechanism": "测试机制",
+        })
+        assert r.status_code == 201
+        rid = r.get_json()["id"]
+
+        # 创建接口内部已 reload —— 公开详情应立刻可见
+        pub = client.get(f"/api/v1/rules/{rid}")
+        assert pub.status_code == 200
+        assert pub.get_json()["severity"] == "caution"
+
+        self._cleanup_pair(client, auth, seed_db, ids, names)
+
+    def test_create_normalizes_pair_order(self, client, auth, seed_db):
+        """传反了也应落成 ing_a_id < ing_b_id（schema CHECK 依赖这个约定）。"""
+        names = ("ZZ成乙一", "ZZ成乙二")
+        ids = self._fresh_pair(client, auth, seed_db, "乙")
+        r = client.post("/api/v1/admin/rules", headers=auth, json={
+            "ing_a_id": ids[1], "ing_b_id": ids[0],  # 故意反着传
+            "severity": "monitor",
+        })
+        assert r.status_code == 201
+        rid = r.get_json()["id"]
+        detail = client.get(f"/api/v1/admin/rules/{rid}", headers=auth).get_json()
+        assert detail["ing_a_id"] < detail["ing_b_id"]
+
+        self._cleanup_pair(client, auth, seed_db, ids, names)
+
+    def test_create_duplicate_pair_409(self, client, auth, seed_db):
+        names = ("ZZ成丙一", "ZZ成丙二")
+        ids = self._fresh_pair(client, auth, seed_db, "丙")
+        payload = {"ing_a_id": ids[0], "ing_b_id": ids[1], "severity": "monitor"}
+        assert client.post("/api/v1/admin/rules", headers=auth,
+                           json=payload).status_code == 201
+        # 反序再建也应命中 UNIQUE
+        dup = client.post("/api/v1/admin/rules", headers=auth, json={
+            "ing_a_id": ids[1], "ing_b_id": ids[0], "severity": "caution",
+        })
+        assert dup.status_code == 409
+        self._cleanup_pair(client, auth, seed_db, ids, names)
+
+    def test_create_same_ingredient_400(self, client, auth):
+        r = client.post("/api/v1/admin/rules", headers=auth, json={
+            "ing_a_id": 1, "ing_b_id": 1, "severity": "monitor",
+        })
+        assert r.status_code == 400
+
+    def test_create_bad_severity_400(self, client, auth):
+        r = client.post("/api/v1/admin/rules", headers=auth, json={
+            "ing_a_id": 1, "ing_b_id": 2, "severity": "nuke",
+        })
+        assert r.status_code == 400
+
+    def test_create_unknown_ingredient_404(self, client, auth):
+        r = client.post("/api/v1/admin/rules", headers=auth, json={
+            "ing_a_id": 999999, "ing_b_id": 1, "severity": "monitor",
+        })
+        assert r.status_code == 404
+
 
 class TestDrugs:
     def test_list(self, client, auth):
@@ -235,6 +372,72 @@ class TestDrugs:
 
     def test_not_found(self, client, auth):
         assert client.get("/api/v1/admin/drugs/999999", headers=auth).status_code == 404
+
+    # ── 创建 ─────────────────────────────────────────
+    @staticmethod
+    def _cleanup(seed_db, drug_name, ing_names=()):
+        from ddi.db.session import session as db_session
+
+        with db_session(seed_db) as c:
+            c.execute("DELETE FROM drug WHERE name_cn = ?", (drug_name,))
+            for n in ing_names:
+                c.execute("DELETE FROM ingredient WHERE name_cn = ?", (n,))
+
+    def test_create_with_existing_ingredient(self, client, auth, seed_db):
+        name = "ZZ测试药品甲"
+        self._cleanup(seed_db, name)
+        r = client.post("/api/v1/admin/drugs", headers=auth, json={
+            "name_cn": name, "dosage_form": "片剂",
+            "ingredients": [{"id": 1, "strength": "5mg"}],  # 华法林
+        })
+        assert r.status_code == 201
+        did = r.get_json()["id"]
+
+        detail = client.get(f"/api/v1/admin/drugs/{did}", headers=auth).get_json()
+        assert detail["name_cn"] == name
+        assert detail["ingredients"][0]["name_cn"] == "华法林"
+        assert detail["pinyin"]  # 拼音已生成
+
+        # reload_drugs 生效：公开 normalize 能立刻认出新药
+        norm = client.post("/api/v1/normalize", json={"drugs": [name]})
+        results = norm.get_json()["results"]
+        assert results[0]["matched"] and results[0]["matched"]["drug_id"] == did
+
+        # 同名同剂型重复 → 409
+        dup = client.post("/api/v1/admin/drugs", headers=auth, json={
+            "name_cn": name, "dosage_form": "片剂",
+            "ingredients": [{"id": 1}],
+        })
+        assert dup.status_code == 409
+
+        self._cleanup(seed_db, name)
+        assert client.post("/api/v1/admin/reload", headers=auth).status_code == 200
+
+    def test_create_auto_creates_ingredient(self, client, auth, seed_db):
+        drug, ing = "ZZ测试药品乙", "ZZ自建成分"
+        self._cleanup(seed_db, drug, [ing])
+        r = client.post("/api/v1/admin/drugs", headers=auth, json={
+            "name_cn": drug,
+            "ingredients": [{"name": ing, "strength": "10mg"}],
+        })
+        assert r.status_code == 201
+        did = r.get_json()["id"]
+
+        detail = client.get(f"/api/v1/admin/drugs/{did}", headers=auth).get_json()
+        assert detail["ingredients"] and detail["ingredients"][0]["name_cn"] == ing
+
+        self._cleanup(seed_db, drug, [ing])
+        assert client.post("/api/v1/admin/reload", headers=auth).status_code == 200
+
+    def test_create_requires_ingredients(self, client, auth):
+        r = client.post("/api/v1/admin/drugs", headers=auth,
+                        json={"name_cn": "ZZ空成分药"})
+        assert r.status_code == 400
+
+    def test_create_requires_name(self, client, auth):
+        r = client.post("/api/v1/admin/drugs", headers=auth,
+                        json={"ingredients": [{"id": 1}]})
+        assert r.status_code == 400
 
 
 class TestLogs:

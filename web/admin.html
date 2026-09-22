@@ -3,20 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- cache-bust: fix-content-type -->
 <title>管理后台 · AI 联合用药安全评估</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="styles.css?v=2">
-<link rel="stylesheet" href="admin.css?v=1">
+<link rel="stylesheet" href="admin.css?v=4">
 </head>
 <body>
 
 <!-- ══════════ 登录门 ══════════ -->
 <div id="login-panel" class="login-overlay">
   <div class="login-card panel">
-    <h1 class="login-title">管理后台</h1>
+    <div class="login-brand">
+      <span class="brand-mark" aria-hidden="true">Rx</span>
+      <div>
+        <h1 class="login-title">管理后台</h1>
+        <p class="login-sub">AI 联合用药安全评估系统</p>
+      </div>
+    </div>
     <p class="help">输入 admin.token 令牌登录。令牌在服务端 config.yaml 的 admin 段。</p>
     <input id="login-token" type="password" autocomplete="current-password"
-           placeholder="访问令牌" aria-label="访问令牌">
+           placeholder="访问令牌" aria-label="访问令牌" autofocus>
     <button id="login-btn" class="btn btn-primary btn-block" type="button">登录</button>
     <p id="login-error" class="login-error" hidden role="alert"></p>
     <p class="login-back"><a href="./">← 返回评估页</a></p>
@@ -54,8 +61,15 @@
 
     <!-- ── 规则库 ────────────────────────────── -->
     <section id="tab-rules" class="tab-panel" role="tabpanel">
+      <div class="section-bar">
+        <h2>规则列表</h2>
+        <div class="bar-actions">
+          <span class="label-hint">点击行或「编辑」打开详情 · 保存后即时热重载</span>
+          <button id="rule-new" class="btn btn-primary btn-sm" type="button">＋ 新建规则</button>
+        </div>
+      </div>
       <div class="filter-row">
-        <input id="rule-q" type="search" placeholder="搜索成分/机制/后果" aria-label="搜索规则">
+        <input id="rule-q" type="search" placeholder="搜索成分 / 机制 / 后果" aria-label="搜索规则">
         <select id="rule-severity" aria-label="严重度筛选">
           <option value="">全部严重度</option>
           <option value="contraindicated">禁忌</option>
@@ -75,21 +89,48 @@
           <thead>
             <tr><th>ID</th><th>成分对</th><th>严重度</th><th>状态</th><th>证据</th><th>依据</th><th>操作</th></tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <tr><td class="is-state is-loading" colspan="7">加载中…</td></tr>
+          </tbody>
         </table>
       </div>
       <div id="rule-pager" class="pager"></div>
 
-      <!-- 规则详情/编辑 -->
+      <!-- 规则详情/编辑/新建 -->
       <div id="rule-editor" class="editor panel" hidden>
         <div class="editor-head">
           <h3 id="rule-editor-title">编辑规则</h3>
           <button id="rule-editor-close" class="btn btn-ghost btn-sm" type="button">关闭</button>
         </div>
-        <div class="editor-pair">
+        <!-- 编辑态：只读成分对；新建态：选择器（id 由服务端规范排序）-->
+        <div id="rule-pair-view" class="editor-pair">
           <span id="rule-ing-a" class="chip-name"></span>
           <span class="chip-arrow">+</span>
           <span id="rule-ing-b" class="chip-name"></span>
+        </div>
+        <div id="rule-pair-pick" class="pair-pick" hidden>
+          <div class="field-sm">
+            <label class="label-sm" for="rule-pick-a">成分 A</label>
+            <input id="rule-pick-a" type="text" list="ing-options" autocomplete="off"
+                   placeholder="输入名称搜索，如 华法林" required>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="rule-pick-b">成分 B</label>
+            <input id="rule-pick-b" type="text" list="ing-options" autocomplete="off"
+                   placeholder="输入名称搜索，如 阿司匹林" required>
+          </div>
+          <datalist id="ing-options"></datalist>
+          <p class="help">成分不在列表里？先到「药品数据 → 新建药品」添加（会自动建成分），
+            或在下方快速创建。</p>
+          <details class="ing-quick">
+            <summary>快速新建成分</summary>
+            <div class="ing-quick-row">
+              <input id="ing-new-name" type="text" placeholder="成分中文名（必填）" maxlength="100">
+              <input id="ing-new-cat" type="text" placeholder="分类（选填），如 抗凝药" maxlength="50">
+              <button id="ing-new-save" class="btn btn-secondary btn-sm" type="button">创建成分</button>
+            </div>
+            <span id="ing-new-msg" class="editor-msg" role="status"></span>
+          </details>
         </div>
         <div class="grid-2">
           <div class="field-sm">
@@ -144,39 +185,107 @@
 
     <!-- ── 药品数据 ──────────────────────────── -->
     <section id="tab-drugs" class="tab-panel" role="tabpanel" hidden>
-      <div class="filter-row">
-        <input id="drug-q" type="search" placeholder="搜索通用名/拼音/别名" aria-label="搜索药品">
-        <button id="drug-search" class="btn btn-secondary btn-sm" type="button">查询</button>
-      </div>
-
       <!-- 匹配测试 -->
       <div class="panel test-box">
-        <h3 class="subhead">匹配测试 <span class="label-hint">调用公开 normalize 接口，按行/顿号输入多个</span></h3>
+        <h3 class="subhead">匹配测试 <span class="label-hint">调用公开 normalize 接口，按行 / 顿号输入多个</span></h3>
         <textarea id="test-input" rows="3" placeholder="阿司匹林&#10;华法林"></textarea>
-        <button id="test-run" class="btn btn-secondary btn-sm" type="button">测试匹配</button>
+        <div class="test-actions">
+          <button id="test-run" class="btn btn-secondary btn-sm" type="button">测试匹配</button>
+        </div>
         <div id="test-result" class="chips"></div>
       </div>
 
+      <div class="section-bar">
+        <h2>药品目录</h2>
+        <div class="bar-actions">
+          <span class="label-hint">点击行或「详情」查看成分拆解</span>
+          <button id="drug-new" class="btn btn-primary btn-sm" type="button">＋ 新建药品</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <input id="drug-q" type="search" placeholder="搜索通用名 / 拼音 / 别名" aria-label="搜索药品">
+        <button id="drug-search" class="btn btn-secondary btn-sm" type="button">查询</button>
+      </div>
       <div class="table-wrap">
         <table class="table" id="drug-table">
           <thead>
             <tr><th>ID</th><th>通用名</th><th>剂型</th><th>成分</th><th>拼音</th><th>操作</th></tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <tr><td class="is-state is-loading" colspan="6">加载中…</td></tr>
+          </tbody>
         </table>
       </div>
       <div id="drug-pager" class="pager"></div>
+
+      <!-- 新建药品 -->
+      <div id="drug-editor" class="editor panel" hidden>
+        <div class="editor-head">
+          <h3>新建药品</h3>
+          <button id="drug-editor-close" class="btn btn-ghost btn-sm" type="button">关闭</button>
+        </div>
+        <div class="grid-2">
+          <div class="field-sm">
+            <label class="label-sm" for="drug-f-name">通用名 *</label>
+            <input id="drug-f-name" type="text" maxlength="200" placeholder="如 阿莫西林胶囊" required>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="drug-f-form">剂型</label>
+            <input id="drug-f-form" type="text" maxlength="50" placeholder="如 胶囊">
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="drug-f-alias">别名（顿号分隔）</label>
+            <input id="drug-f-alias" type="text" placeholder="羟氨苄青霉素">
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="drug-f-trade">商品名（顿号分隔）</label>
+            <input id="drug-f-trade" type="text" placeholder="阿莫仙">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field-sm">
+            <label class="check">
+              <input id="drug-f-otc" type="checkbox">
+              <span>OTC</span>
+            </label>
+          </div>
+          <div class="field-sm">
+            <label class="check">
+              <input id="drug-f-tcm" type="checkbox">
+              <span>中成药<small>勾选后评估时按成分拆解</small></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field-sm">
+          <label class="label-sm">成分 * <span class="label-hint">库里已有的直接搜；没有的名字保存时自动创建</span></label>
+          <div id="drug-ing-rows"></div>
+          <button id="drug-ing-add" class="btn btn-ghost btn-sm" type="button">＋ 添加成分</button>
+        </div>
+
+        <div class="editor-actions">
+          <button id="drug-save" class="btn btn-primary" type="button">保存</button>
+          <span id="drug-editor-msg" class="editor-msg" role="status"></span>
+        </div>
+      </div>
+
       <div id="drug-detail" class="editor panel" hidden></div>
     </section>
 
     <!-- ── 评估记录 ──────────────────────────── -->
     <section id="tab-logs" class="tab-panel" role="tabpanel" hidden>
+      <div class="section-bar">
+        <h2>评估日志</h2>
+        <span class="label-hint">仅存白名单画像，过敏史原文永不落库</span>
+      </div>
       <div class="table-wrap">
         <table class="table" id="log-table">
           <thead>
             <tr><th>时间</th><th>输入药品</th><th>总体风险</th><th>硬拦截</th><th>耗时</th><th>LLM</th><th></th></tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <tr><td class="is-state is-loading" colspan="7">加载中…</td></tr>
+          </tbody>
         </table>
       </div>
       <div id="log-pager" class="pager"></div>
@@ -185,6 +294,10 @@
 
     <!-- ── 配置 ──────────────────────────────── -->
     <section id="tab-config" class="tab-panel" role="tabpanel" hidden>
+      <div class="section-bar">
+        <h2>系统配置</h2>
+        <span class="label-hint">LLM 部分热替换 · 端口 / debug 需重启生效</span>
+      </div>
       <div id="config-notice" class="notice notice-info" hidden>
         <span class="notice-icon" aria-hidden="true">ℹ</span><p id="config-notice-msg"></p>
       </div>
@@ -246,9 +359,13 @@
       </form>
     </section>
   </main>
+
+  <footer class="wrap footer">
+    <p>管理后台 · 令牌仅存于本标签页 sessionStorage，关闭即失效；密钥类配置永不明文回显。</p>
+  </footer>
 </div>
 
 <script src="config.js?v=5"></script>
-<script src="admin.js?v=1"></script>
+<script src="admin.js?v=4"></script>
 </body>
 </html>
