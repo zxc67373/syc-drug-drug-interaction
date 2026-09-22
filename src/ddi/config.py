@@ -65,6 +65,12 @@ DEFAULTS: dict[str, Any] = {
         # "*" 仅适用于本机开发 —— 生产必须写死来源
         "cors_origins": ["*"],
     },
+    "admin": {
+        # 管理后台访问令牌。留空 = 管理接口全部禁用（fail closed）。
+        # 生成方式：python -c "import secrets; print(secrets.token_urlsafe(32))"
+        # ⚠️ 与 llm.api_key 同级的凭据，绝不提交、绝不外发。
+        "token": "",
+    },
 }
 
 
@@ -107,6 +113,7 @@ _ENV_SPEC: list[tuple[tuple[str, str], str, str | None]] = [
     (("api", "port"),        "DDI_API_PORT",        "API_PORT"),
     (("api", "debug"),       "DDI_API_DEBUG",       "API_DEBUG"),
     (("api", "cors_origins"), "DDI_API_CORS_ORIGINS", None),
+    (("admin", "token"),      "DDI_ADMIN_TOKEN",      None),
 ]
 
 
@@ -193,9 +200,17 @@ class Settings:
     api_cors_origins: tuple[str, ...] = ("*",)
     web_dir: Path = ROOT / "web"
 
+    # ── 管理后台 ──────────────────────────────────────
+    admin_token: str = ""
+
     # 记录配置从哪来，便于 /health 和排查
     config_file: Path | None = None
     config_source: str = "默认值"
+
+    @property
+    def admin_enabled(self) -> bool:
+        """token 为空 = 管理接口整体禁用。默认关闭，fail closed。"""
+        return bool(self.admin_token)
 
     @property
     def llm_configured(self) -> bool:
@@ -244,6 +259,7 @@ def build_settings(config_path: Path | None = None) -> Settings:
         api_port=int(cfg["api"].get("port") or 5000),
         api_debug=bool(cfg["api"].get("debug")),
         api_cors_origins=tuple(cfg["api"].get("cors_origins") or ["*"]),
+        admin_token=(cfg.get("admin", {}).get("token") or "").strip(),
         config_file=path if path.exists() else None,
         config_source=source,
     )

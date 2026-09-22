@@ -86,14 +86,19 @@ class LLMClient:
         model: str | None = None,
         max_tokens: int | None = None,
         timeout: int | None = None,
+        thinking: bool | None = None,
+        temperature: float | None = None,
     ):
         self.api_key = api_key or settings.llm_api_key
         self.base_url = base_url or settings.llm_base_url
         self.model = model or settings.llm_model
         self.max_tokens = max_tokens or settings.llm_max_tokens
         self.timeout = timeout or settings.llm_timeout
-        self.thinking = settings.llm_thinking
-        self.temperature = settings.llm_temperature
+        # thinking/temperature 允许显式传入（管理后台热替换用），
+        # 不传时回退 settings —— 与 max_tokens 等字段同一套回退逻辑。
+        # 注意：temperature 允许 None（"不传该参数"），所以用 is not None 判断。
+        self.thinking = settings.llm_thinking if thinking is None else bool(thinking)
+        self.temperature = settings.llm_temperature if temperature is None else temperature
         self._client = None
 
     @property

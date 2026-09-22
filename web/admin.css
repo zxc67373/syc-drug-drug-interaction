@@ -1,0 +1,118 @@
+/* ══════════════════════════════════════════════════════════════
+   管理后台样式 —— 只写 styles.css 缺的部分（表格/标签页/登录层）。
+   颜色与间距全部沿用 styles.css 的自定义属性，深浅色零成本适配。
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 登录层 ─────────────────────────────── */
+.login-overlay {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-card { width: 100%; max-width: 380px; display: grid; gap: 12px; }
+.login-title { margin: 0; font-size: 20px; }
+.login-error { color: #c0392b; margin: 0; font-size: 13px; }
+.login-back { margin: 4px 0 0; font-size: 13px; text-align: center; }
+.login-back a { color: var(--ink-2); }
+
+/* ── 标签页 ─────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: 20px 0;
+  overflow-x: auto;
+}
+.tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); }
+.tab.is-active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* ── 表格 ───────────────────────────────── */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.table th, .table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.table th {
+  background: var(--surface-sunk);
+  font-weight: 600;
+  font-size: 12.5px;
+  position: sticky;
+  top: 0;
+}
+.table tbody tr:hover { background: var(--surface-sunk); }
+.table tbody tr:last-child td { border-bottom: none; }
+.table .col-actions { white-space: nowrap; }
+
+/* ── 筛选行 / 分页 ──────────────────────── */
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.filter-row input[type="search"] { flex: 1; min-width: 180px; }
+.pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
+.pager button { min-width: 30px; }
+
+/* ── 编辑面板 ───────────────────────────── */
+.editor { margin-top: 16px; }
+.editor-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.editor-head h3 { margin: 0; font-size: 16px; }
+.editor-pair { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.editor-actions { display: flex; gap: 10px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.editor-msg { font-size: 13px; color: var(--ink-2); }
+.editor-msg.is-ok { color: #2e7d32; }
+.editor-msg.is-err { color: #c0392b; }
+
+.sources-box { margin-top: 12px; font-size: 13px; }
+.sources-box .source-item {
+  border-left: 3px solid var(--border-strong);
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  background: var(--surface-sunk);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* ── 危险按钮（删除）───────────────────── */
+.btn-danger {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+}
+.btn-danger:hover:not(:disabled) { background: #a93226; }
+
+/* ── 匹配测试 ───────────────────────────── */
+.test-box { margin-bottom: 16px; display: grid; gap: 10px; }
+.test-box textarea { width: 100%; }
+
+/* ── 配置表单 ───────────────────────────── */
+.config-form { display: grid; gap: 10px; max-width: 720px; }
+.config-form input[type="text"],
+.config-form input[type="number"],
+.config-form input[type="password"],
+.config-form select { width: 100%; }
+
+/* ── 详情 JSON 块 ───────────────────────── */
+.code-block {
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 8px 0 0;
+}

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>管理后台 · AI 联合用药安全评估</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+
+<!-- ══════════ 登录门 ══════════ -->
+<div id="login-panel" class="login-overlay">
+  <div class="login-card panel">
+    <h1 class="login-title">管理后台</h1>
+    <p class="help">输入 admin.token 令牌登录。令牌在服务端 config.yaml 的 admin 段。</p>
+    <input id="login-token" type="password" autocomplete="current-password"
+           placeholder="访问令牌" aria-label="访问令牌">
+    <button id="login-btn" class="btn btn-primary btn-block" type="button">登录</button>
+    <p id="login-error" class="login-error" hidden role="alert"></p>
+    <p class="login-back"><a href="./">← 返回评估页</a></p>
+  </div>
+</div>
+
+<!-- ══════════ 主体（登录后显示）════════════ -->
+<div id="admin-shell" hidden>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">Rx</span>
+        <div>
+          <h1>管理后台</h1>
+          <p class="brand-sub">规则 · 药品 · 日志 · 配置</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="theme-toggle" class="btn btn-ghost btn-sm" type="button"
+                aria-label="切换深浅色">深浅色</button>
+        <a class="btn btn-ghost btn-sm" href="./">评估页</a>
+        <button id="logout-btn" class="btn btn-secondary btn-sm" type="button">退出</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav class="tabs" role="tablist" aria-label="后台导航">
+      <button class="tab is-active" data-tab="rules" role="tab" aria-selected="true">规则库</button>
+      <button class="tab" data-tab="drugs" role="tab" aria-selected="false">药品数据</button>
+      <button class="tab" data-tab="logs" role="tab" aria-selected="false">评估记录</button>
+      <button class="tab" data-tab="config" role="tab" aria-selected="false">配置</button>
+    </nav>
+
+    <!-- ── 规则库 ────────────────────────────── -->
+    <section id="tab-rules" class="tab-panel" role="tabpanel">
+      <div class="filter-row">
+        <input id="rule-q" type="search" placeholder="搜索成分/机制/后果" aria-label="搜索规则">
+        <select id="rule-severity" aria-label="严重度筛选">
+          <option value="">全部严重度</option>
+          <option value="contraindicated">禁忌</option>
+          <option value="caution">慎用</option>
+          <option value="monitor">关注</option>
+        </select>
+        <select id="rule-status" aria-label="状态筛选">
+          <option value="">全部状态</option>
+          <option value="draft">草稿</option>
+          <option value="reviewed">已审核</option>
+          <option value="published">已发布</option>
+        </select>
+        <button id="rule-search" class="btn btn-secondary btn-sm" type="button">查询</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="rule-table">
+          <thead>
+            <tr><th>ID</th><th>成分对</th><th>严重度</th><th>状态</th><th>证据</th><th>依据</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="rule-pager" class="pager"></div>
+
+      <!-- 规则详情/编辑 -->
+      <div id="rule-editor" class="editor panel" hidden>
+        <div class="editor-head">
+          <h3 id="rule-editor-title">编辑规则</h3>
+          <button id="rule-editor-close" class="btn btn-ghost btn-sm" type="button">关闭</button>
+        </div>
+        <div class="editor-pair">
+          <span id="rule-ing-a" class="chip-name"></span>
+          <span class="chip-arrow">+</span>
+          <span id="rule-ing-b" class="chip-name"></span>
+        </div>
+        <div class="grid-2">
+          <div class="field-sm">
+            <label class="label-sm" for="rule-f-severity">严重度</label>
+            <select id="rule-f-severity">
+              <option value="contraindicated">禁忌</option>
+              <option value="caution">慎用</option>
+              <option value="monitor">关注</option>
+            </select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="rule-f-status">状态</label>
+            <select id="rule-f-status">
+              <option value="draft">草稿</option>
+              <option value="reviewed">已审核</option>
+              <option value="published">已发布</option>
+            </select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="rule-f-evidence">证据等级</label>
+            <select id="rule-f-evidence">
+              <option value="">未标</option>
+              <option value="A">A</option><option value="B">B</option>
+              <option value="C">C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="rule-f-reviewed-by">审核人</label>
+            <input id="rule-f-reviewed-by" type="text" placeholder="选填">
+          </div>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="rule-f-mechanism">机制</label>
+          <textarea id="rule-f-mechanism" rows="3"></textarea>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="rule-f-consequence">后果</label>
+          <textarea id="rule-f-consequence" rows="3"></textarea>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="rule-f-suggestion">建议</label>
+          <textarea id="rule-f-suggestion" rows="3"></textarea>
+        </div>
+        <div id="rule-sources" class="sources-box"></div>
+        <div class="editor-actions">
+          <button id="rule-save" class="btn btn-primary" type="button">保存</button>
+          <button id="rule-delete" class="btn btn-danger" type="button">删除</button>
+          <span id="rule-editor-msg" class="editor-msg" role="status"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 药品数据 ──────────────────────────── -->
+    <section id="tab-drugs" class="tab-panel" role="tabpanel" hidden>
+      <div class="filter-row">
+        <input id="drug-q" type="search" placeholder="搜索通用名/拼音/别名" aria-label="搜索药品">
+        <button id="drug-search" class="btn btn-secondary btn-sm" type="button">查询</button>
+      </div>
+
+      <!-- 匹配测试 -->
+      <div class="panel test-box">
+        <h3 class="subhead">匹配测试 <span class="label-hint">调用公开 normalize 接口，按行/顿号输入多个</span></h3>
+        <textarea id="test-input" rows="3" placeholder="阿司匹林&#10;华法林"></textarea>
+        <button id="test-run" class="btn btn-secondary btn-sm" type="button">测试匹配</button>
+        <div id="test-result" class="chips"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" id="drug-table">
+          <thead>
+            <tr><th>ID</th><th>通用名</th><th>剂型</th><th>成分</th><th>拼音</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="drug-pager" class="pager"></div>
+      <div id="drug-detail" class="editor panel" hidden></div>
+    </section>
+
+    <!-- ── 评估记录 ──────────────────────────── -->
+    <section id="tab-logs" class="tab-panel" role="tabpanel" hidden>
+      <div class="table-wrap">
+        <table class="table" id="log-table">
+          <thead>
+            <tr><th>时间</th><th>输入药品</th><th>总体风险</th><th>硬拦截</th><th>耗时</th><th>LLM</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="log-pager" class="pager"></div>
+      <div id="log-detail" class="editor panel" hidden></div>
+    </section>
+
+    <!-- ── 配置 ──────────────────────────────── -->
+    <section id="tab-config" class="tab-panel" role="tabpanel" hidden>
+      <div id="config-notice" class="notice notice-info" hidden>
+        <span class="notice-icon" aria-hidden="true">ℹ</span><p id="config-notice-msg"></p>
+      </div>
+      <form id="config-form" class="panel config-form">
+        <h3 class="subhead">大模型</h3>
+        <div class="grid-2">
+          <div class="field-sm">
+            <label class="label-sm" for="cfg-provider">供应商</label>
+            <select id="cfg-provider"></select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="cfg-model">模型（留空=预设）</label>
+            <input id="cfg-model" type="text">
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="cfg-max-tokens">max_tokens</label>
+            <input id="cfg-max-tokens" type="number" min="1" max="65536">
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="cfg-timeout">超时（秒）</label>
+            <input id="cfg-timeout" type="number" min="1" max="600">
+          </div>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="cfg-api-key">API Key</label>
+          <input id="cfg-api-key" type="password" autocomplete="new-password">
+          <p class="help" id="cfg-api-key-hint"></p>
+          <label class="check">
+            <input id="cfg-api-key-clear" type="checkbox">
+            <span>清除已保存的密钥</span>
+          </label>
+        </div>
+        <div class="field-sm">
+          <label class="check">
+            <input id="cfg-thinking" type="checkbox">
+            <span>启用自适应思考<small>质量更好但延迟明显增加</small></span>
+          </label>
+        </div>
+
+        <h3 class="subhead">服务</h3>
+        <div class="grid-2">
+          <div class="field-sm">
+            <label class="label-sm" for="cfg-port">端口</label>
+            <input id="cfg-port" type="number" min="1" max="65535">
+          </div>
+          <div class="field-sm">
+            <label class="check" style="margin-top:24px">
+              <input id="cfg-debug" type="checkbox">
+              <span>debug 模式<small>生产必须关闭</small></span>
+            </label>
+          </div>
+        </div>
+
+        <p class="help" id="cfg-meta"></p>
+        <div class="editor-actions">
+          <button class="btn btn-primary" type="submit">保存配置</button>
+          <span id="config-msg" class="editor-msg" role="status"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script src="config.js?v=5"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>

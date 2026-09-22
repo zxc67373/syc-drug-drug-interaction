@@ -94,6 +94,29 @@ python scripts/check_config.py --try deepseek   # 预览切换后的实际端点
 
 旧版不带 `DDI_` 前缀的名字（`LLM_API_KEY` 等）仍然兼容。
 
+### 管理后台
+
+后台页面在 `/admin`（子路径部署则为 `/syc/admin`），提供四个标签页：
+
+| 标签页 | 能力 | 接口 |
+|---|---|---|
+| 规则库 | 按严重度/状态筛选、搜索、编辑、删除规则，改动即时热重载 | `GET/PUT/DELETE /api/v1/admin/rules` |
+| 药品数据 | 搜索药品、查看成分明细、匹配测试 | `GET /api/v1/admin/drugs` |
+| 评估记录 | 查看每次评估的输入、风险分级、耗时、降级原因 | `GET /api/v1/admin/logs` |
+| 配置 | 改供应商/模型/密钥等，LLM 部分热替换，其余提示需重启 | `GET/PUT /api/v1/admin/config` |
+
+**启用**：在 `config.yaml` 填 `admin.token`（留空 = 后台整体 403 禁用）：
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+登录后令牌存在浏览器 `sessionStorage`，请求带 `Authorization: Bearer <token>`。
+密钥类字段（`llm.api_key`、`admin.token`）在 GET 配置时只回 `*_set: true`，**从不回显明文**。
+写规则、删规则后会自动调用 `reload_rules()` 重载内存引擎，无需重启服务。
+
+隐私边界：评估日志只存年龄/性别/肝肾/孕期等白名单字段，**过敏史原文永不落库**。
+
 ---
 
 ## 数据流

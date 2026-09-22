@@ -13,14 +13,18 @@
 
 from __future__ import annotations
 
+import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
+from ddi.api.admin import admin_bp
 from ddi.config import settings
+from ddi.db.audit import audit_profile, write_log
 from ddi.service import DDIService
 
 log = logging.getLogger(__name__)
@@ -75,6 +79,8 @@ def create_app(service: DDIService | None = None) -> Flask:
     CORS(app, resources={r"/api/*": {"origins": list(settings.api_cors_origins)}})
     svc = service or DDIService()
     app.config["DDI_SERVICE"] = svc
+    # 管理后台。鉴权在 Blueprint 的 require_admin 里，token 为空时整体 403。
+    app.register_blueprint(admin_bp)
     logging.basicConfig(
         level=logging.DEBUG if settings.api_debug else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -120,6 +126,35 @@ def create_app(service: DDIService | None = None) -> Flask:
             }
         )
 
+    def _audit_assess(drugs, profile, body, report=None, error=None):
+        """记一条评估日志。**日志失败绝不影响评估本身** —— 全程吞异常。"""
+        try:
+            use_llm = bool(body.get("use_llm", True))
+            use_rag = bool(body.get("use_rag", True))
+            d = report.to_dict() if report else {}
+            engine = d.get("engine") or {}
+            matched = [
+                x.get("name_cn") or x.get("raw")
+                for x in d.get("drugs", [])
+            ]
+            write_log({
+                "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "drugs_raw": json.dumps(drugs, ensure_ascii=False),
+                "drugs_matched": json.dumps(matched, ensure_ascii=False),
+                "profile_summary": json.dumps(audit_profile(profile), ensure_ascii=False),
+                "overall_risk": d.get("overall_risk"),
+                "hard_blocked": int(bool(d.get("hard_blocked"))),
+                "use_llm": int(use_llm),
+                "use_rag": int(use_rag),
+                "used_llm": int(bool(engine.get("used_llm"))) if report else None,
+                "degraded_reason": engine.get("degraded_reason"),
+                "elapsed_ms": d.get("elapsed_ms"),
+                "ok": int(report is not None),
+                "error": error,
+            })
+        except Exception:  # noqa: BLE001
+            log.debug("评估日志写入失败（不影响评估）", exc_info=True)
+
     @app.post("/api/v1/assess")
     def assess():
         body = request.get_json(silent=True)
@@ -127,12 +162,17 @@ def create_app(service: DDIService | None = None) -> Flask:
         if err:
             return _bad(err)
 
-        report = svc.assess(
-            drugs=drugs,               # type: ignore[arg-type]
-            profile=profile,           # type: ignore[arg-type]
-            use_llm=bool(body.get("use_llm", True)),      # type: ignore[union-attr]
-            use_rag=bool(body.get("use_rag", True)),      # type: ignore[union-attr]
-        )
+        try:
+            report = svc.assess(
+                drugs=drugs,               # type: ignore[arg-type]
+                profile=profile,           # type: ignore[arg-type]
+                use_llm=bool(body.get("use_llm", True)),      # type: ignore[union-attr]
+                use_rag=bool(body.get("use_rag", True)),      # type: ignore[union-attr]
+            )
+        except Exception as e:  # noqa: BLE001 — 记录失败请求也要落日志
+            _audit_assess(drugs, profile, body, error=str(e))
+            raise
+        _audit_assess(drugs, profile, body, report=report)
         return jsonify(report.to_dict())
 
     @app.post("/api/v1/normalize")

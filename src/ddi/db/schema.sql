@@ -89,3 +89,24 @@ CREATE TABLE IF NOT EXISTS rule_source (
   excerpt   TEXT,                          -- 原文摘录，前端"查看依据"直接展示
   PRIMARY KEY (rule_id, source_id)
 );
+
+-- ── 评估请求日志（管理后台用）──────────────────────────
+-- 隐私红线：只存白名单字段（age/sex/hepatic/renal/pregnancy），
+-- **绝不存 allergies 内容**或其他自由文本患者数据。
+CREATE TABLE IF NOT EXISTS assess_log (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at      TEXT NOT NULL,              -- ISO8601 UTC
+  drugs_raw       TEXT NOT NULL,              -- JSON 数组：用户原始输入
+  drugs_matched   TEXT,                       -- JSON 数组：归一化后的通用名
+  profile_summary TEXT,                       -- JSON；仅 age/sex/hepatic/renal/pregnancy
+  overall_risk    TEXT,
+  hard_blocked    INTEGER NOT NULL DEFAULT 0,
+  use_llm         INTEGER NOT NULL DEFAULT 0,
+  use_rag         INTEGER NOT NULL DEFAULT 0,
+  used_llm        INTEGER,                    -- 实际是否调用了大模型
+  degraded_reason TEXT,
+  elapsed_ms      INTEGER,
+  ok              INTEGER NOT NULL DEFAULT 1,
+  error           TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_assess_log_created ON assess_log(created_at DESC);

@@ -82,3 +82,13 @@ api:
   # 会被人白嫖大模型额度。
   cors_origins:
     - "*"
+
+admin:
+  # 管理后台访问令牌。留空 = 管理接口全部禁用（推荐先留空）。
+  # 启用方式：填一个随机长字符串，例如
+  #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+  # 然后访问 /admin（子路径部署为 /syc/admin），输入这个令牌登录。
+  # ⚠️ 与 llm.api_key 同级的凭据：不提交、不外发、不进截图。
+  token: ""
+
+# 环境变量 DDI_ADMIN_TOKEN 优先于这里 —— 容器/CI 部署建议走环境变量。

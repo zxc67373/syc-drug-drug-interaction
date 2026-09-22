@@ -89,6 +89,22 @@ class DDIService:
                 return None
         return self._retriever
 
+    def reload_rules(self) -> None:
+        """管理后台改规则后调用：重建内存规则索引。
+
+        规则引擎在构造时把全部规则读进内存，写库不会自动可见。
+        数据量在千级以内，整体重建比增量补丁简单且不易漏。
+        单进程（waitress 线程模型）下重绑属性是原子的：
+        进行中的评估继续持有旧对象，新请求拿到新对象。
+        """
+        self.engine = RuleEngine()
+        log.info("规则索引已重载：%d 条", self.engine.rule_count)
+
+    def reload_drugs(self) -> None:
+        """管理后台改药品后调用：重建归一化索引。"""
+        self.normalizer = Normalizer()
+        log.info("药品索引已重载：%d 个", self.normalizer.size)
+
     def warmup(self) -> float:
         """服务启动时调用：预载索引与嵌入模型，返回耗时（秒）。
 
