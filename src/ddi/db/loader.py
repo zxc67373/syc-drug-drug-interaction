@@ -67,6 +67,52 @@ def _read_yaml(path: Path) -> object:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
+def _dedupe_sources(conn: sqlite3.Connection) -> int:
+    """归并同名（year 均为 NULL）的重复 source 行，返回归并行数。
+
+    历史成因见 sources.upsert_source 的 docstring：老版本用
+    ON CONFLICT(title, year)，year=NULL 不判冲突，load_seed 每跑一次
+    就给带来源的规则复制一轮同名 source，旧链接不删 —— 同一条规则的
+    「溯源依据」会显示成 N 条一模一样的内容。本函数是**一次性自愈**：
+    保留最小 id，把 rule_source 指过去（撞主键就删旧链），再删重复行。
+    幂等：干净库上执行为 0。
+    """
+    rows = conn.execute(
+        "SELECT id, title FROM source WHERE year IS NULL ORDER BY id"
+    ).fetchall()
+    groups: dict[str, list[int]] = {}
+    for r in rows:
+        groups.setdefault(r["title"], []).append(r["id"])
+    merged = 0
+    for ids in groups.values():
+        if len(ids) < 2:
+            continue
+        keep, dups = ids[0], ids[1:]
+        for sid in dups:
+            links = conn.execute(
+                "SELECT rule_id FROM rule_source WHERE source_id = ?", (sid,)
+            ).fetchall()
+            for lk in links:
+                clash = conn.execute(
+                    "SELECT 1 FROM rule_source WHERE rule_id = ? AND source_id = ?",
+                    (lk["rule_id"], keep),
+                ).fetchone()
+                if clash:
+                    conn.execute(
+                        "DELETE FROM rule_source WHERE rule_id = ? AND source_id = ?",
+                        (lk["rule_id"], sid),
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE rule_source SET source_id = ?"
+                        " WHERE rule_id = ? AND source_id = ?",
+                        (keep, lk["rule_id"], sid),
+                    )
+            conn.execute("DELETE FROM source WHERE id = ?", (sid,))
+            merged += 1
+    return merged
+
+
 def _load_drugs(conn: sqlite3.Connection, path: Path, report: LoadReport) -> None:
     data = _read_yaml(path) or {}
     ing_ids: dict[str, int] = {}
@@ -238,6 +284,9 @@ def load_all(
         if not drugs_yaml.exists():
             report.errors.append(f"缺少 {drugs_yaml}")
             return report
+        merged = _dedupe_sources(conn)   # 先自愈历史重复来源，再开始挂链
+        if merged:
+            report.warnings.append(f"归并重复来源 {merged} 行")
         _load_drugs(conn, drugs_yaml, report)
         _load_ddi(conn, seed_dir, report)
         _load_population(conn, seed_dir / "population.yaml", report)
