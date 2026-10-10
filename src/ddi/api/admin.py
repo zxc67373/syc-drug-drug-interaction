@@ -1182,6 +1182,46 @@ def drug_detail(drug_id: int):
     return jsonify(out)
 
 
+@admin_bp.get("/drugs/<int:drug_id>/sources")
+@require_admin
+def drug_sources(drug_id: int):
+    """药品的相关说明书依据：该药成分参与的规则上挂的所有来源。
+
+    数据模型里说明书摘录（source/excerpt）挂在**规则**上，没有药品级
+    说明书表 —— 所以按 成分→规则→来源 三级关联取，去重后返回。
+    """
+    with session() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM drug WHERE id = ?", (drug_id,)
+        ).fetchone()
+        if not exists:
+            return _bad("药品不存在", 404)
+        rows = conn.execute(
+            """SELECT s.id, s.title, s.source_type, s.publisher,
+                              s.year, s.url, rs.excerpt
+               FROM drug_ingredient di
+               JOIN ddi_rule r
+                 ON r.ing_a_id = di.ingredient_id
+                 OR r.ing_b_id = di.ingredient_id
+               JOIN rule_source rs ON rs.rule_id = r.id
+               JOIN source s ON s.id = rs.source_id
+               WHERE di.drug_id = ?
+               ORDER BY s.id""",
+            (drug_id,),
+        ).fetchall()
+    # 同一来源会挂在该成分的多条规则上，excerpt 是**各规则自己的要义**，
+    # 内容不同所以 DISTINCT 去不掉 —— 按来源归并，取最长的一条做展示
+    #（SQL 的 MAX 是按字节序，中文取不到最长，只能在 Python 里比长度）。
+    best: dict[int, dict] = {}
+    for r in rows:
+        d = dict(r)
+        cur = best.get(d["id"])
+        if cur is None or len(d.get("excerpt") or "") > len(cur.get("excerpt") or ""):
+            best[d["id"]] = d
+    items = [best[k] for k in sorted(best)]
+    return jsonify({"items": items, "total": len(items)})
+
+
 def _json_str_list(val: Any, key: str) -> tuple[list[str] | None, str | None]:
     """接受 JSON 数组或顿号/逗号分隔的字符串，归一化成去空列表。"""
     if val in (None, ""):

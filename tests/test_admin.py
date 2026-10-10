@@ -373,6 +373,26 @@ class TestDrugs:
     def test_not_found(self, client, auth):
         assert client.get("/api/v1/admin/drugs/999999", headers=auth).status_code == 404
 
+    # ── 说明书依据（成分 → 规则 → 来源）─────────────
+    def test_drug_sources(self, client, auth):
+        listed = client.get("/api/v1/admin/drugs?q=华法林",
+                            headers=auth).get_json()
+        did = listed["items"][0]["id"]
+        r = client.get(f"/api/v1/admin/drugs/{did}/sources", headers=auth)
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["total"] >= 1
+        first = body["items"][0]
+        assert first["title"]
+        assert "excerpt" in first
+        # 去重：同一来源只出现一次
+        ids = [s["id"] for s in body["items"]]
+        assert len(ids) == len(set(ids))
+
+    def test_drug_sources_not_found(self, client, auth):
+        r = client.get("/api/v1/admin/drugs/999999/sources", headers=auth)
+        assert r.status_code == 404
+
     # ── 创建 ─────────────────────────────────────────
     @staticmethod
     def _cleanup(seed_db, drug_name, ing_names=()):

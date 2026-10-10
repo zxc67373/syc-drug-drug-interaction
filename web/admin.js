@@ -755,6 +755,33 @@
           (i.category ? '（' + i.category + '）' : '')));
         ing.appendChild(item);
       });
+
+      // 相关说明书依据：成分 → 规则 → 来源（说明书摘录挂在规则上）
+      var srcBox = box.appendChild(el('div', 'sources-box'));
+      srcBox.appendChild(el('h4', 'subhead', '相关说明书依据'));
+      var srcLoading = el('p', 'source-caveat', '加载中…');
+      srcBox.appendChild(srcLoading);
+      api('/admin/drugs/' + d.id + '/sources').then(function (sd) {
+        srcLoading.remove();
+        if (!sd.items.length) {
+          srcBox.appendChild(el('p', 'source-caveat',
+            '暂无 —— 该药品成分参与的规则尚未录入说明书摘录。'));
+          return;
+        }
+        sd.items.forEach(function (s) {
+          var item = el('div', 'source-item');
+          var title = el('p', 'source-title', s.title || '未命名');
+          if (s.source_type) {
+            title.appendChild(el('span', 'source-type', ' ' + s.source_type));
+          }
+          item.appendChild(title);
+          appendExcerpt(item, s.excerpt, s.url);
+          srcBox.appendChild(item);
+        });
+      }).catch(function (e) {
+        srcLoading.textContent = '依据加载失败：' + e.message;
+      });
+
       box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }).catch(function (e) { toast('加载详情失败：' + e.message); });
   }
