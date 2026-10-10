@@ -421,6 +421,32 @@
     dl.appendChild(f);
   }
 
+  // 摘录展示：>120 字默认 3 行截断 + 「查看全文」展开/收起；
+  // 有外链（如 DDInter）附「打开原始来源」。全文 = 库里存的 excerpt。
+  function appendExcerpt(parent, excerpt, url) {
+    if (excerpt) {
+      var p = el('p', 'source-excerpt', excerpt);
+      parent.appendChild(p);
+      if (excerpt.length > 120) {
+        p.classList.add('is-clamped');
+        var btn = el('button', 'source-more', '查看全文');
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          var clamped = p.classList.toggle('is-clamped');
+          btn.textContent = clamped ? '查看全文' : '收起';
+        });
+        parent.appendChild(btn);
+      }
+    }
+    if (url) {
+      var a = el('a', 'source-link', '打开原始来源 ↗');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      parent.appendChild(a);
+    }
+  }
+
   function buildSources(sources) {
     var wrap = el('details', 'sources');
     wrap.appendChild(el('summary', null, '查看依据（' + sources.length + ' 条）'));
@@ -430,7 +456,7 @@
       var title = el('p', 'source-title', s.title || '未命名来源');
       if (s.type) title.appendChild(el('span', 'source-type', s.type));
       item.appendChild(title);
-      if (s.excerpt) item.appendChild(el('p', 'source-excerpt', s.excerpt));
+      appendExcerpt(item, s.excerpt, s.url);
       wrap.appendChild(item);
     });
 

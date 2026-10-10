@@ -430,6 +430,35 @@ input::placeholder { color: var(--ink-muted); }
   padding: 1px 7px; margin-left: 6px; font-weight: 400;
 }
 .source-excerpt { margin: 0; color: var(--ink-2); }
+
+/* ── 溯源全文：长摘录默认 3 行截断，按钮展开 ───── */
+/* 智能导入的 excerpt 上限 2000 字，全铺开会把依据列表撑得没法看 */
+.source-excerpt.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.source-more {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 5px 0 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--accent);
+  cursor: pointer;
+}
+.source-more:hover { text-decoration: underline; }
+.source-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.source-link {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.source-link:hover { text-decoration: underline; }
 .source-caveat { margin: 7px 0 0; font-size: 11.5px; color: var(--ink-muted); font-style: italic; }
 
 /* ── 正文 ───────────────────────────────────────── */
