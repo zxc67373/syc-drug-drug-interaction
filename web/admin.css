@@ -468,6 +468,212 @@
   text-align: center;
 }
 
+/* ── 总览仪表盘 ───────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.stat-card.is-err .stat-label { color: var(--critical); }
+.stat-label {
+  font-size: 12px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.stat-sub { font-size: 12px; color: var(--ink-2); }
+
+#tab-overview .grid-2 { margin-bottom: 16px; }
+.ov-box .subhead { margin: 0 0 12px; font-size: 13px; }
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 4.5em 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 9px;
+}
+.bar-row:last-child { margin-bottom: 0; }
+.bar-label { color: var(--ink-2); white-space: nowrap; }
+.bar-track {
+  height: 8px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--hairline);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width .3s ease;
+}
+@media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+.bar-fill.is-draft { background: var(--ink-muted); }
+.bar-fill.is-reviewed { background: var(--accent); }
+.bar-fill.is-published { background: var(--good); }
+.bar-fill.is-contraindicated { background: var(--critical); }
+.bar-fill.is-caution { background: #a34a24; }
+.bar-fill.is-monitor { background: #8a5a00; }
+:root[data-theme="dark"] .bar-fill.is-caution { background: var(--serious); }
+:root[data-theme="dark"] .bar-fill.is-monitor { background: var(--warning); }
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .bar-fill.is-caution { background: var(--serious); }
+  :root:where(:not([data-theme="light"])) .bar-fill.is-monitor { background: var(--warning); }
+}
+.bar-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* ── 批量操作条（规则勾选后出现）───────────────── */
+.batch-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: var(--accent-wash);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius);
+}
+.batch-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.batch-bar select { width: auto; flex: none; }
+.batch-bar .editor-msg { flex: 1; min-width: 0; }
+
+.table .col-check {
+  width: 34px;
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 4px;
+}
+.table th.col-check { text-align: center; }
+.table td.col-check input { cursor: pointer; vertical-align: middle; }
+
+/* ── Toast 轻提示 ───────────────────────────── */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: min(90vw, 480px);
+  padding: 10px 16px;
+  font-size: 13.5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  animation: admin-rise .2s cubic-bezier(.2, .7, .3, 1);
+}
+.toast.is-ok {
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 40%, transparent);
+}
+.toast.is-err {
+  color: var(--critical);
+  border-color: color-mix(in srgb, var(--critical) 40%, transparent);
+}
+
+/* ── 弹窗（编辑/核对/详情面板居中浮层）────────── */
+/* 替代"表格下方展开"：不用滚过去看，Esc / 点蒙层 / 点关闭三种方式退出。
+   z-index：蒙层 50 > 吸顶标签页 10；弹窗 51；toast 100（要在弹窗之上）。 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 18, 24, 0.48);
+  animation: admin-fade .15s ease;
+}
+body.has-modal { overflow: hidden; }
+
+.editor.is-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 51;
+  margin-top: 0;
+  width: min(720px, calc(100vw - 28px));
+  max-height: min(88vh, 860px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: var(--shadow-lg);
+  /* translate 定位 + admin-rise 的 translateY 动画会叠加 ——
+     用居中专用的关键帧，动画终点保持在中点 */
+  animation: modal-rise .2s cubic-bezier(.2, .7, .3, 1);
+}
+@keyframes modal-rise {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 10px)); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editor.is-modal { animation: none; }
+}
+
+/* ── 智能导入：来源行 / 提示 / 解析结果 ─────── */
+.src-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.src-row .src-title { flex: 2 1 200px; min-width: 0; }
+.src-row .src-type  { flex: 1 1 110px; min-width: 0; }
+.src-row .src-year  { flex: none; width: 92px; }
+.src-row .src-rm    { flex: none; color: var(--ink-muted); }
+.src-row .src-rm:hover { color: var(--critical); }
+.src-row .src-excerpt {
+  flex: 1 0 100%;
+  resize: vertical;
+  min-height: 44px;
+}
+#imp-src-rows:empty + #imp-src-add { margin-top: 0; }
+
+#imp-raw {
+  margin: 0 0 12px;
+  padding: 8px 11px;
+  background: var(--surface-sunk);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 13px;
+}
+#imp-warnings { margin-bottom: 12px; font-size: 13px; }
+#imp-warnings p { margin: 4px 0; }
+.imp-warn-item { color: var(--ink-2); }
+
+#import-parse-result:empty { display: none; }
+#import-parse-result { margin-top: 4px; }
+
+/* 两类草稿的字段组按 kind 切换（[hidden] 压过 display）*/
+.import-kind-fields { display: grid; gap: 12px; }
+
 /* ── 窄屏 ───────────────────────────────── */
 @media (max-width: 720px) {
   .tabs { top: 56px; }

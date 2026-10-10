@@ -18,6 +18,7 @@ import yaml
 
 from ddi.config import settings
 from ddi.db.session import init_db, session
+from ddi.db.sources import link_rule_source, upsert_source
 
 DDI_FILE_GLOB = "ddi_*.yaml"
 
@@ -75,7 +76,8 @@ def _load_drugs(conn: sqlite3.Connection, path: Path, report: LoadReport) -> Non
             """INSERT INTO ingredient (name_cn, name_en, cas, atc, category)
                VALUES (?, ?, ?, ?, ?)
                ON CONFLICT(name_cn) DO UPDATE SET
-                 name_en=excluded.name_en, atc=excluded.atc, category=excluded.category
+                 name_en=excluded.name_en, cas=excluded.cas,
+                 atc=excluded.atc, category=excluded.category
                RETURNING id""",
             (
                 ing["name_cn"],
@@ -130,21 +132,10 @@ def _load_drugs(conn: sqlite3.Connection, path: Path, report: LoadReport) -> Non
 
 
 def _load_sources(conn: sqlite3.Connection, src: dict, report: LoadReport) -> int:
-    cur = conn.execute(
-        """INSERT INTO source (title, source_type, publisher, year, url)
-           VALUES (?, ?, ?, ?, ?)
-           ON CONFLICT(title, year) DO UPDATE SET source_type=excluded.source_type
-           RETURNING id""",
-        (
-            src["title"],
-            src.get("type"),
-            src.get("publisher"),
-            src.get("year"),
-            src.get("url"),
-        ),
-    )
+    # UPSERT SQL 提到了 ddi/db/sources.py（与管理后台确认入库共用）
+    source_id = upsert_source(conn, src)
     report.sources += 1
-    return cur.fetchone()["id"]
+    return source_id
 
 
 def _load_ddi(conn: sqlite3.Connection, seed_dir: Path, report: LoadReport) -> None:
@@ -200,12 +191,7 @@ def _load_ddi(conn: sqlite3.Connection, seed_dir: Path, report: LoadReport) -> N
                 if not src.get("title"):
                     continue
                 source_id = _load_sources(conn, src, report)
-                conn.execute(
-                    """INSERT INTO rule_source (rule_id, source_id, excerpt)
-                       VALUES (?, ?, ?)
-                       ON CONFLICT(rule_id, source_id) DO UPDATE SET excerpt=excluded.excerpt""",
-                    (rule_id, source_id, src.get("excerpt")),
-                )
+                link_rule_source(conn, rule_id, source_id, src.get("excerpt"))
 
 
 def _load_population(conn: sqlite3.Connection, path: Path, report: LoadReport) -> None:

@@ -24,6 +24,13 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(target)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    # WAL：写入时不阻塞读（读也不阻塞写），对"后台改规则、评估同时在跑"
+    # 这种单实例场景是免费的并发收益。journal_mode 是库级持久设置，
+    # 这里每条连接都设一次，保证新建的库也进入 WAL。
+    # synchronous=NORMAL 是 WAL 下的官方推荐：进程崩溃不丢数据，
+    # 只有机电断电可能丢最后一个事务 —— 对本项目的规则库可接受。
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
 

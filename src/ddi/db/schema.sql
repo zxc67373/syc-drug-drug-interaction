@@ -58,6 +58,10 @@ CREATE TABLE IF NOT EXISTS ddi_rule (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ddi_pair ON ddi_rule(ing_a_id, ing_b_id);
 CREATE INDEX IF NOT EXISTS idx_ddi_ing_a ON ddi_rule(ing_a_id);
 CREATE INDEX IF NOT EXISTS idx_ddi_ing_b ON ddi_rule(ing_b_id);
+-- 后台按状态/严重度筛选与批量审核流走这两个索引（当前 182 条不痛，
+-- 规则库按目标是数千条准备）
+CREATE INDEX IF NOT EXISTS idx_ddi_status ON ddi_rule(status);
+CREATE INDEX IF NOT EXISTS idx_ddi_severity ON ddi_rule(severity);
 
 -- ── 人群禁忌 ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS population_rule (
@@ -89,6 +93,30 @@ CREATE TABLE IF NOT EXISTS rule_source (
   excerpt   TEXT,                          -- 原文摘录，前端"查看依据"直接展示
   PRIMARY KEY (rule_id, source_id)
 );
+
+-- ── LLM 智能导入暂存（待确认）──────────────────────────
+-- 流程：粘贴文本 → 大模型解析 → 草稿落本表（pending）→
+-- 人工核对/编辑 → 确认后才写入 ddi_rule 等正式表。
+-- 驳回 = 硬删除（没有 rejected 状态）；confirmed 保留作轻量审计。
+-- kind 的 CHECK 预留了 drug / population_rule —— 本版只产出 ddi_rule，
+-- 但把枚举一次写全，以后放开不用重建表（SQLite 改 CHECK 要整表迁移）。
+CREATE TABLE IF NOT EXISTS import_draft (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind        TEXT NOT NULL
+              CHECK (kind IN ('ddi_rule','drug','population_rule')),
+  status      TEXT NOT NULL DEFAULT 'pending'
+              CHECK (status IN ('pending','confirmed')),
+  fields      TEXT NOT NULL,               -- JSON：结构化草稿载荷（可编辑）
+  raw_span    TEXT,                        -- LLM 标注的原文片段
+  warnings    TEXT DEFAULT '[]',           -- JSON 数组：模型不确定之处
+  batch_id    TEXT,                        -- 一次解析调用的分组 id
+  source_name TEXT,                        -- 上传文件名/来源标签（选填）
+  target_id   INTEGER,                     -- 确认后写入的正式表主键
+  created_at  TEXT NOT NULL,               -- ISO8601 UTC
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_import_draft_status ON import_draft(status, id DESC);
+CREATE INDEX IF NOT EXISTS idx_import_draft_batch  ON import_draft(batch_id);
 
 -- ── 评估请求日志（管理后台用）──────────────────────────
 -- 隐私红线：只存白名单字段（age/sex/hepatic/renal/pregnancy），

@@ -440,6 +440,127 @@ class TestDrugs:
         assert r.status_code == 400
 
 
+class TestRuleBatch:
+    """批量改状态 / 批量删除 —— 审核流的主入口。"""
+
+    @staticmethod
+    def _make_rule_at(seed_db, offset: int) -> int:
+        """在不同成分对上造专用规则（offset 避开 _make_rule 用的第一对）。"""
+        from ddi.db.session import session as db_session
+
+        with db_session(seed_db) as c:
+            ing = c.execute(
+                "SELECT id FROM ingredient ORDER BY id LIMIT 2 OFFSET ?",
+                (offset,),
+            ).fetchall()
+            pair = tuple(sorted(i["id"] for i in ing))
+            c.execute(
+                "DELETE FROM ddi_rule WHERE ing_a_id = ? AND ing_b_id = ?", pair
+            )
+            cur = c.execute(
+                "INSERT INTO ddi_rule (ing_a_id, ing_b_id, severity, status)"
+                " VALUES (?, ?, 'caution', 'draft')",
+                pair,
+            )
+            return int(cur.lastrowid)
+
+    def test_batch_set_status(self, client, auth, seed_db):
+        ids = [self._make_rule_at(seed_db, 0), self._make_rule_at(seed_db, 2)]
+        assert client.post("/api/v1/admin/reload", headers=auth).status_code == 200
+        try:
+            r = client.post("/api/v1/admin/rules/batch", headers=auth, json={
+                "ids": ids, "action": "set_status", "status": "reviewed",
+            })
+            assert r.status_code == 200
+            assert r.get_json()["affected"] == 2
+            for rid in ids:
+                detail = client.get(f"/api/v1/admin/rules/{rid}",
+                                    headers=auth).get_json()
+                assert detail["status"] == "reviewed"
+        finally:
+            for rid in ids:
+                client.delete(f"/api/v1/admin/rules/{rid}", headers=auth)
+
+    def test_batch_delete(self, client, auth, seed_db):
+        rid = self._make_rule_at(seed_db, 0)
+        assert client.post("/api/v1/admin/reload", headers=auth).status_code == 200
+        r = client.post("/api/v1/admin/rules/batch", headers=auth,
+                        json={"ids": [rid], "action": "delete"})
+        assert r.status_code == 200
+        assert r.get_json()["affected"] == 1
+        assert client.get(f"/api/v1/admin/rules/{rid}",
+                          headers=auth).status_code == 404
+
+    def test_batch_missing_id_is_all_or_nothing(self, client, auth, seed_db):
+        """有一个 id 不存在 → 整批 404，已存在的那条**不能**被改动。"""
+        rid = self._make_rule_at(seed_db, 0)
+        assert client.post("/api/v1/admin/reload", headers=auth).status_code == 200
+        try:
+            r = client.post("/api/v1/admin/rules/batch", headers=auth, json={
+                "ids": [rid, 999999], "action": "set_status", "status": "published",
+            })
+            assert r.status_code == 404
+            detail = client.get(f"/api/v1/admin/rules/{rid}",
+                                headers=auth).get_json()
+            assert detail["status"] == "draft"  # 未被半截提交改掉
+        finally:
+            client.delete(f"/api/v1/admin/rules/{rid}", headers=auth)
+
+    def test_batch_invalid_payloads(self, client, auth):
+        cases = [
+            {"ids": [], "action": "delete"},                      # 空数组
+            {"ids": ["x"], "action": "delete"},                   # 非整数
+            {"ids": [1], "action": "explode"},                    # 未知 action
+            {"ids": [1], "action": "set_status"},                 # 缺 status
+            {"ids": [1], "action": "set_status",
+             "status": "approved"},                               # 非法状态
+        ]
+        for payload in cases:
+            r = client.post("/api/v1/admin/rules/batch", headers=auth,
+                            json=payload)
+            assert r.status_code == 400, payload
+
+    def test_batch_requires_auth(self, client):
+        r = client.post("/api/v1/admin/rules/batch", json={"ids": [1],
+                                                            "action": "delete"})
+        assert r.status_code == 401
+
+
+class TestStats:
+    def test_stats_shape(self, client, auth):
+        r = client.get("/api/v1/admin/stats", headers=auth)
+        assert r.status_code == 200
+        body = r.get_json()
+
+        rules = body["rules"]
+        assert rules["total"] > 0
+        # 补零语义：三个状态/三个严重度都必须在，值 >= 0
+        assert set(rules["by_status"]) == {"draft", "reviewed", "published"}
+        assert set(rules["by_severity"]) == {"contraindicated", "caution", "monitor"}
+        assert 0.0 <= rules["source_rate"] <= 1.0
+        assert rules["with_source"] <= rules["total"]
+
+        assert body["drugs"] > 0
+        assert body["ingredients"] > 0
+        assert body["population"] > 0
+        assert {"total", "recent_24h"} <= set(body["logs"])
+
+        svc = body["service"]
+        assert {"llm_configured", "rag_ready", "embed_backend",
+                "engine_rules", "drugs_indexed"} <= set(svc)
+        assert svc["engine_rules"] == rules["total"]
+
+    def test_stats_never_leaks_secrets(self, client, auth, monkeypatch):
+        import ddi.api.admin as admin_mod
+        from ddi.config import settings
+
+        monkeypatch.setattr(admin_mod, "settings",
+                            replace(settings, llm_api_key="sk-STATS-SECRET"))
+        text = client.get("/api/v1/admin/stats",
+                          headers=auth).get_data(as_text=True)
+        assert "sk-STATS-SECRET" not in text
+
+
 class TestLogs:
     def test_assess_writes_log(self, client, auth):
         r = client.post("/api/v1/assess", json={

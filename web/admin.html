@@ -7,7 +7,7 @@
 <title>管理后台 · AI 联合用药安全评估</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="styles.css?v=2">
-<link rel="stylesheet" href="admin.css?v=4">
+<link rel="stylesheet" href="admin.css?v=6">
 </head>
 <body>
 
@@ -39,7 +39,7 @@
         <span class="brand-mark" aria-hidden="true">Rx</span>
         <div>
           <h1>管理后台</h1>
-          <p class="brand-sub">规则 · 药品 · 日志 · 配置</p>
+          <p class="brand-sub">总览 · 规则 · 药品 · 日志 · 配置</p>
         </div>
       </div>
       <div class="topbar-actions">
@@ -53,14 +53,44 @@
 
   <main class="wrap">
     <nav class="tabs" role="tablist" aria-label="后台导航">
-      <button class="tab is-active" data-tab="rules" role="tab" aria-selected="true">规则库</button>
+      <button class="tab is-active" data-tab="overview" role="tab" aria-selected="true">总览</button>
+      <button class="tab" data-tab="rules" role="tab" aria-selected="false">规则库</button>
       <button class="tab" data-tab="drugs" role="tab" aria-selected="false">药品数据</button>
+      <button class="tab" data-tab="import" role="tab" aria-selected="false">智能导入</button>
       <button class="tab" data-tab="logs" role="tab" aria-selected="false">评估记录</button>
       <button class="tab" data-tab="config" role="tab" aria-selected="false">配置</button>
     </nav>
 
+    <!-- ── 总览 ──────────────────────────────── -->
+    <section id="tab-overview" class="tab-panel" role="tabpanel">
+      <div class="section-bar">
+        <h2>系统总览</h2>
+        <div class="bar-actions">
+          <span class="label-hint">切回本页自动刷新</span>
+          <button id="ov-refresh" class="btn btn-secondary btn-sm" type="button">刷新</button>
+        </div>
+      </div>
+      <div id="ov-cards" class="stat-grid">
+        <div class="stat-card"><span class="stat-label">加载中…</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel ov-box">
+          <h3 class="subhead">规则状态分布</h3>
+          <div id="ov-status-bars"></div>
+        </div>
+        <div class="panel ov-box">
+          <h3 class="subhead">严重度分布</h3>
+          <div id="ov-sev-bars"></div>
+        </div>
+      </div>
+      <div class="panel ov-box">
+        <h3 class="subhead">系统状态</h3>
+        <div id="ov-sys" class="detail-rows"></div>
+      </div>
+    </section>
+
     <!-- ── 规则库 ────────────────────────────── -->
-    <section id="tab-rules" class="tab-panel" role="tabpanel">
+    <section id="tab-rules" class="tab-panel" role="tabpanel" hidden>
       <div class="section-bar">
         <h2>规则列表</h2>
         <div class="bar-actions">
@@ -84,20 +114,35 @@
         </select>
         <button id="rule-search" class="btn btn-secondary btn-sm" type="button">查询</button>
       </div>
+      <div id="rule-batch" class="batch-bar" hidden>
+        <span id="rule-batch-count" class="batch-count">已选 0 条</span>
+        <select id="rule-batch-status" aria-label="批量目标状态">
+          <option value="">改为…</option>
+          <option value="draft">草稿</option>
+          <option value="reviewed">已审核</option>
+          <option value="published">已发布</option>
+        </select>
+        <button id="rule-batch-apply" class="btn btn-secondary btn-sm" type="button">批量改状态</button>
+        <button id="rule-batch-del" class="btn btn-danger btn-sm" type="button">批量删除</button>
+        <span id="rule-batch-msg" class="editor-msg" role="status"></span>
+      </div>
       <div class="table-wrap">
         <table class="table" id="rule-table">
           <thead>
-            <tr><th>ID</th><th>成分对</th><th>严重度</th><th>状态</th><th>证据</th><th>依据</th><th>操作</th></tr>
+            <tr>
+              <th class="col-check"><input id="rule-check-all" type="checkbox" aria-label="全选本页"></th>
+              <th>ID</th><th>成分对</th><th>严重度</th><th>状态</th><th>证据</th><th>依据</th><th>操作</th>
+            </tr>
           </thead>
           <tbody>
-            <tr><td class="is-state is-loading" colspan="7">加载中…</td></tr>
+            <tr><td class="is-state is-loading" colspan="8">加载中…</td></tr>
           </tbody>
         </table>
       </div>
       <div id="rule-pager" class="pager"></div>
 
-      <!-- 规则详情/编辑/新建 -->
-      <div id="rule-editor" class="editor panel" hidden>
+      <!-- 规则详情/编辑/新建（弹窗） -->
+      <div id="rule-editor" class="editor panel is-modal" hidden>
         <div class="editor-head">
           <h3 id="rule-editor-title">编辑规则</h3>
           <button id="rule-editor-close" class="btn btn-ghost btn-sm" type="button">关闭</button>
@@ -218,8 +263,8 @@
       </div>
       <div id="drug-pager" class="pager"></div>
 
-      <!-- 新建药品 -->
-      <div id="drug-editor" class="editor panel" hidden>
+      <!-- 新建药品（弹窗） -->
+      <div id="drug-editor" class="editor panel is-modal" hidden>
         <div class="editor-head">
           <h3>新建药品</h3>
           <button id="drug-editor-close" class="btn btn-ghost btn-sm" type="button">关闭</button>
@@ -269,7 +314,178 @@
         </div>
       </div>
 
-      <div id="drug-detail" class="editor panel" hidden></div>
+      <div id="drug-detail" class="editor panel is-modal" hidden></div>
+    </section>
+
+    <!-- ── 智能导入（LLM 解析 → 待确认 → 确认入库）── -->
+    <section id="tab-import" class="tab-panel" role="tabpanel" hidden>
+      <div class="panel test-box">
+        <h3 class="subhead">粘贴文本，大模型自动解析规则
+          <span class="label-hint">说明书 / 文献 / 相互作用列表 · 最多 8000 字 · 解析结果先进待确认，不会直接入库</span>
+        </h3>
+        <textarea id="import-text" rows="6"
+          placeholder="把药品说明书、相互作用文献或规则描述粘贴到这里…"></textarea>
+        <div class="test-actions">
+          <input id="import-file" type="file" accept=".txt,.md,.text,text/plain" hidden>
+          <button id="import-pick" class="btn btn-ghost btn-sm" type="button">选择文本文件</button>
+          <span id="import-file-name" class="label-hint"></span>
+          <button id="import-parse" class="btn btn-primary btn-sm" type="button">解析并加入待确认</button>
+        </div>
+        <p id="import-parse-msg" class="editor-msg" role="status"></p>
+        <div id="import-parse-result" class="chips"></div>
+      </div>
+
+      <div class="section-bar">
+        <h2>待确认规则</h2>
+        <div class="bar-actions">
+          <span class="label-hint">点行核对 → 确认入库 / 丢弃 · 确认前可编辑</span>
+        </div>
+      </div>
+      <div class="filter-row">
+        <select id="import-status" aria-label="状态筛选">
+          <option value="pending">待确认</option>
+          <option value="confirmed">已入库</option>
+          <option value="all">全部</option>
+        </select>
+        <button id="import-search" class="btn btn-secondary btn-sm" type="button">查询</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="import-table">
+          <thead>
+            <tr><th>ID</th><th>类型</th><th>摘要</th><th>提示</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="is-state is-loading" colspan="6">加载中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="import-pager" class="pager"></div>
+
+      <!-- 草稿核对 / 编辑器（弹窗） -->
+      <div id="import-editor" class="editor panel is-modal" hidden>
+        <div class="editor-head">
+          <h3 id="import-editor-title">核对草稿</h3>
+          <button id="import-editor-close" class="btn btn-ghost btn-sm" type="button">关闭</button>
+        </div>
+        <p id="imp-raw" class="source-excerpt" hidden></p>
+        <div id="imp-warnings" class="notice notice-info" hidden></div>
+
+        <!-- 类型一：DDI 规则 -->
+        <div id="import-f-rule" class="import-kind-fields">
+        <div class="grid-2">
+          <div class="field-sm">
+            <label class="label-sm" for="imp-a-name">成分 A *</label>
+            <input id="imp-a-name" type="text" maxlength="100" placeholder="如 华法林" required>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="imp-b-name">成分 B *</label>
+            <input id="imp-b-name" type="text" maxlength="100" placeholder="如 阿司匹林" required>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="imp-severity">严重度 *</label>
+            <select id="imp-severity">
+              <option value="contraindicated">禁忌</option>
+              <option value="caution">慎用</option>
+              <option value="monitor">关注</option>
+            </select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="imp-evidence">证据等级</label>
+            <select id="imp-evidence">
+              <option value="">未标</option>
+              <option value="A">A</option><option value="B">B</option>
+              <option value="C">C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="imp-status">入库状态</label>
+            <select id="imp-status">
+              <option value="reviewed">已审核（默认）</option>
+              <option value="draft">草稿</option>
+              <option value="published">已发布</option>
+            </select>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm" for="imp-reviewed-by">审核人</label>
+            <input id="imp-reviewed-by" type="text" maxlength="100" placeholder="选填">
+          </div>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="imp-mechanism">机制</label>
+          <textarea id="imp-mechanism" rows="3"></textarea>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="imp-consequence">后果</label>
+          <textarea id="imp-consequence" rows="3"></textarea>
+        </div>
+        <div class="field-sm">
+          <label class="label-sm" for="imp-suggestion">建议</label>
+          <textarea id="imp-suggestion" rows="3"></textarea>
+        </div>
+
+        <div class="field-sm">
+          <label class="label-sm">溯源依据
+            <span class="label-hint">确认时同（标题, 年份）自动复用库里已有来源</span>
+          </label>
+          <div id="imp-src-rows"></div>
+          <button id="imp-src-add" class="btn btn-ghost btn-sm" type="button">＋ 添加来源</button>
+        </div>
+        </div><!-- /import-f-rule -->
+
+        <!-- 类型二：药品 -->
+        <div id="import-f-drug" class="import-kind-fields" hidden>
+          <div class="grid-2">
+            <div class="field-sm">
+              <label class="label-sm" for="imp-d-name">通用名 *</label>
+              <input id="imp-d-name" type="text" maxlength="200" placeholder="如 阿莫西林胶囊" required>
+            </div>
+            <div class="field-sm">
+              <label class="label-sm" for="imp-d-form">剂型</label>
+              <input id="imp-d-form" type="text" maxlength="50" placeholder="如 胶囊">
+            </div>
+            <div class="field-sm">
+              <label class="label-sm" for="imp-d-trade">商品名（顿号分隔）</label>
+              <input id="imp-d-trade" type="text" placeholder="阿莫仙">
+            </div>
+            <div class="field-sm">
+              <label class="label-sm" for="imp-d-alias">别名（顿号分隔）</label>
+              <input id="imp-d-alias" type="text" placeholder="羟氨苄青霉素">
+            </div>
+            <div class="field-sm">
+              <label class="label-sm" for="imp-d-approval">批准文号</label>
+              <input id="imp-d-approval" type="text" maxlength="100">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field-sm">
+              <label class="check">
+                <input id="imp-d-otc" type="checkbox">
+                <span>OTC</span>
+              </label>
+            </div>
+            <div class="field-sm">
+              <label class="check">
+                <input id="imp-d-tcm" type="checkbox">
+                <span>中成药</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-sm">
+            <label class="label-sm">成分 *
+              <span class="label-hint">库里没有的名字确认时自动创建</span>
+            </label>
+            <div id="imp-ing-rows"></div>
+            <button id="imp-ing-add" class="btn btn-ghost btn-sm" type="button">＋ 添加成分</button>
+          </div>
+        </div><!-- /import-f-drug -->
+
+        <div class="editor-actions">
+          <button id="imp-save" class="btn btn-secondary" type="button">保存修改</button>
+          <button id="imp-confirm" class="btn btn-primary" type="button">确认入库</button>
+          <button id="imp-reject" class="btn btn-danger" type="button">丢弃</button>
+          <span id="import-editor-msg" class="editor-msg" role="status"></span>
+        </div>
+      </div>
     </section>
 
     <!-- ── 评估记录 ──────────────────────────── -->
@@ -289,7 +505,7 @@
         </table>
       </div>
       <div id="log-pager" class="pager"></div>
-      <div id="log-detail" class="editor panel" hidden></div>
+      <div id="log-detail" class="editor panel is-modal" hidden></div>
     </section>
 
     <!-- ── 配置 ──────────────────────────────── -->
@@ -353,7 +569,7 @@
 
         <p class="help" id="cfg-meta"></p>
         <div class="editor-actions">
-          <button class="btn btn-primary" type="submit">保存配置</button>
+          <button id="config-save" class="btn btn-primary" type="submit">保存配置</button>
           <span id="config-msg" class="editor-msg" role="status"></span>
         </div>
       </form>
@@ -365,7 +581,13 @@
   </footer>
 </div>
 
+<!-- 弹窗蒙层（点蒙层 = 关闭所有打开的面板） -->
+<div id="modal-backdrop" class="modal-backdrop" hidden></div>
+
+<!-- 轻提示（textContent 渲染，不走 innerHTML） -->
+<div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
 <script src="config.js?v=5"></script>
-<script src="admin.js?v=4"></script>
+<script src="admin.js?v=6"></script>
 </body>
 </html>

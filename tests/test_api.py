@@ -11,15 +11,29 @@ from ddi.generate.llm_client import LLMResponse, LLMUnavailable, extract_json
 
 
 class FakeLLM:
-    """可控的假模型。configured=False 时模拟未配置 key 的降级路径。"""
+    """可控的假模型。configured=False 时模拟未配置 key 的降级路径。
+
+    payload 三选一（优先级从高到低）：
+    - ``raw_text``：完全自定义的原始输出（测 JSON 解析失败/围栏等）
+    - ``payload_obj``：任意 dict 序列化（智能导入测试用 {"candidates": …}）
+    - 默认：评估链路的 summary/items 形状
+    """
 
     model = "fake-model"
     base_url = "https://example.invalid/anthropic"
     provider_label = "FakeProvider"
 
-    def __init__(self, items: list[dict] | None = None, configured: bool = True):
+    def __init__(
+        self,
+        items: list[dict] | None = None,
+        configured: bool = True,
+        payload_obj: dict | None = None,
+        raw_text: str | None = None,
+    ):
         self.items = items or []
         self._configured = configured
+        self.payload_obj = payload_obj
+        self.raw_text = raw_text
         self.calls = 0
 
     @property
@@ -30,6 +44,10 @@ class FakeLLM:
     def payload(self) -> str:
         import json
 
+        if self.raw_text is not None:
+            return self.raw_text
+        if self.payload_obj is not None:
+            return json.dumps(self.payload_obj, ensure_ascii=False)
         return json.dumps(
             {
                 "summary": "测试摘要",
@@ -40,7 +58,8 @@ class FakeLLM:
             ensure_ascii=False,
         )
 
-    def complete_json(self, system, user, thinking=True):
+    def complete_json(self, system, user, **kw):
+        # **kw 吞掉 thinking/max_tokens/temperature —— 提取链路会传
         self.calls += 1
         if not self._configured:
             raise LLMUnavailable("未配置")

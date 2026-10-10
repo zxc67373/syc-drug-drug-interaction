@@ -134,11 +134,15 @@ class LLMClient:
         *,
         thinking: bool | None = None,
         temperature: float | None = None,
+        max_tokens: int | None = None,
     ) -> LLMResponse:
         """单轮补全。
 
         ``thinking`` 默认取配置项 ``llm.thinking``（默认关）。开启自适应思考能提升
         解释质量，但实测同一请求延迟从 2.6s 涨到 8.5s。
+
+        ``max_tokens`` 默认取配置项（2048）。结构化抽取一次可能要吐几十条候选，
+        调用方可显式调大（如 4096），否则 JSON 会在半截被截断、整条作废。
 
         第三方兼容端点若不认这个参数会返回 400，此处自动降级重试一次 ——
         兼容层实现不一致是常态，不该让调用方处理。
@@ -153,7 +157,7 @@ class LLMClient:
 
         kwargs: dict[str, Any] = {
             "model": self.model,
-            "max_tokens": self.max_tokens,
+            "max_tokens": max_tokens or self.max_tokens,
             "system": system,
             "messages": messages,
         }
@@ -208,10 +212,19 @@ class LLMClient:
         )
 
     def complete_json(
-        self, system: str, user: str, *, thinking: bool | None = None
+        self,
+        system: str,
+        user: str,
+        *,
+        thinking: bool | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
     ) -> tuple[dict[str, Any] | None, LLMResponse]:
         """要求模型输出 JSON，并解析。解析失败返回 (None, 原始响应)。"""
-        resp = self.complete(system, user, thinking=thinking)
+        resp = self.complete(
+            system, user,
+            thinking=thinking, temperature=temperature, max_tokens=max_tokens,
+        )
         if resp.refused:
             return None, resp
         return extract_json(resp.text), resp

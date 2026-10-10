@@ -94,6 +94,669 @@ def login():
     return jsonify({"ok": True})
 
 
+# ── 总览统计（仪表盘）────────────────────────────────────
+@admin_bp.get("/stats")
+@require_admin
+def stats_overview():
+    """仪表盘数据：内容统计 + 内存索引状态。**不回显任何配置密钥**。"""
+    from datetime import datetime, timedelta, timezone
+
+    from ddi.db.audit import ensure_log_table
+
+    ensure_log_table()  # 老库可能建表早于日志模块
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat(
+        timespec="seconds"
+    )
+
+    def _fill(keys: dict[str, int], counts: dict[str, int]) -> dict[str, int]:
+        """补零：没有 contraindicated 规则时也要回 0，前端不用判 undefined。"""
+        return {k: int(counts.get(k, 0)) for k in keys}
+
+    with session() as conn:
+        rule_total = conn.execute(
+            "SELECT COUNT(*) AS n FROM ddi_rule"
+        ).fetchone()["n"]
+        by_status = {
+            r["status"]: r["n"]
+            for r in conn.execute(
+                "SELECT status, COUNT(*) AS n FROM ddi_rule GROUP BY status"
+            )
+        }
+        by_severity = {
+            r["severity"]: r["n"]
+            for r in conn.execute(
+                "SELECT severity, COUNT(*) AS n FROM ddi_rule GROUP BY severity"
+            )
+        }
+        with_source = conn.execute(
+            "SELECT COUNT(DISTINCT rule_id) AS n FROM rule_source"
+        ).fetchone()["n"]
+        source_total = conn.execute(
+            "SELECT COUNT(*) AS n FROM source"
+        ).fetchone()["n"]
+        drug_count = conn.execute("SELECT COUNT(*) AS n FROM drug").fetchone()["n"]
+        ing_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM ingredient"
+        ).fetchone()["n"]
+        pop_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM population_rule"
+        ).fetchone()["n"]
+        logs_total = conn.execute(
+            "SELECT COUNT(*) AS n FROM assess_log"
+        ).fetchone()["n"]
+        logs_recent = conn.execute(
+            "SELECT COUNT(*) AS n FROM assess_log WHERE created_at >= ?",
+            (cutoff,),
+        ).fetchone()["n"]
+        # import_draft 是懒建表（见 _ensure_import_table），老库可能还没有
+        has_drafts = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='import_draft'"
+        ).fetchone()
+        import_pending = (
+            conn.execute(
+                "SELECT COUNT(*) AS n FROM import_draft WHERE status = 'pending'"
+            ).fetchone()["n"]
+            if has_drafts else 0
+        )
+
+    svc = _svc()
+    rule_total = int(rule_total)
+    return jsonify({
+        "rules": {
+            "total": rule_total,
+            "by_status": _fill(STATUSES, by_status),
+            "by_severity": _fill(SEVERITIES, by_severity),
+            "with_source": int(with_source),
+            # 溯源覆盖是当前数据最大的缺口（README 实测 20.3%），
+            # 放进仪表盘就是让它每次打开都可见
+            "source_rate": round(with_source / rule_total, 4) if rule_total else 0.0,
+        },
+        "drugs": int(drug_count),
+        "ingredients": int(ing_count),
+        "population": int(pop_count),
+        "sources": int(source_total),
+        "logs": {"total": int(logs_total), "recent_24h": int(logs_recent)},
+        "imports": {"pending": int(import_pending)},
+        "service": {
+            "llm_configured": bool(svc.llm.configured),
+            "llm_provider": svc.llm.provider_label if svc.llm.configured else None,
+            "llm_model": svc.llm.model if svc.llm.configured else None,
+            "rag_ready": svc.retriever is not None,
+            "embed_backend": settings.embed_backend,
+            "engine_rules": svc.engine.rule_count,
+            "drugs_indexed": svc.normalizer.size,
+        },
+    })
+
+
+# ── 智能导入（LLM 解析 → 待确认 → 确认入库）──────────────
+# 流程：粘贴文本 → POST /import/parse 大模型抽取 → 草稿落 import_draft
+# （pending）→ 管理员核对/编辑 → confirm 才写 ddi_rule → 或丢弃（硬删）。
+# 红线：LLM 失败一行不写；确认事务里中途失败必须 raise（session() 正常
+# 退出即 commit，中途 return 会把半截写入提交掉）。
+
+IMPORT_TEXT_MAX = 8000
+KIND_CN = {"ddi_rule": "DDI 规则", "drug": "药品", "population_rule": "人群规则"}
+
+# 与 schema.sql 的 import_draft 一致。建表早于本功能的老库靠它懒建 ——
+# 与 audit.ensure_log_table 同一套路，不依赖 init_db（测试库也不用动）。
+_IMPORT_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS import_draft (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind        TEXT NOT NULL
+              CHECK (kind IN ('ddi_rule','drug','population_rule')),
+  status      TEXT NOT NULL DEFAULT 'pending'
+              CHECK (status IN ('pending','confirmed')),
+  fields      TEXT NOT NULL,
+  raw_span    TEXT,
+  warnings    TEXT DEFAULT '[]',
+  batch_id    TEXT,
+  source_name TEXT,
+  target_id   INTEGER,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_import_draft_status ON import_draft(status, id DESC);
+CREATE INDEX IF NOT EXISTS idx_import_draft_batch  ON import_draft(batch_id);
+"""
+
+
+def _ensure_import_table() -> None:
+    """确保 import_draft 存在。幂等；每个导入接口入口调一次。"""
+    with session() as conn:
+        conn.executescript(_IMPORT_TABLE_SQL)
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+class _ImportError(Exception):
+    """确认事务内的失败。raise 触发 session() rollback —— 这是写入开始后
+    唯一安全的中止方式（正常 return 会把半截数据提交掉）。"""
+
+    def __init__(self, msg: str, code: int = 400):
+        super().__init__(msg)
+        self.msg = msg
+        self.code = code
+
+
+def _draft_to_dict(row) -> dict:
+    out = dict(row)
+    for key in ("fields", "warnings"):
+        raw = out.get(key)
+        if isinstance(raw, str) and raw:
+            try:
+                out[key] = json.loads(raw)
+            except (ValueError, TypeError):
+                out[key] = {} if key == "fields" else []
+    out["kind_cn"] = KIND_CN.get(out.get("kind"), out.get("kind"))
+    return out
+
+
+def _validate_drug_fields(raw: dict) -> tuple[dict | None, str | None]:
+    """药品草稿硬校验 —— 与 drug_create 的标量校验同一套口径。"""
+    name = str(raw.get("name_cn") or "").strip()
+    if not name:
+        return None, "name_cn 不能为空"
+    if len(name) > 200:
+        return None, "药名超长（最多 200 字）"
+    form = str(raw.get("dosage_form") or "").strip() or None
+    if form and len(form) > 50:
+        return None, "剂型超长（最多 50 字）"
+    trade, err = _json_str_list(raw.get("trade_names"), "trade_names")
+    if err:
+        return None, err
+    alias, err = _json_str_list(raw.get("aliases"), "aliases")
+    if err:
+        return None, err
+    approval = str(raw.get("approval_no") or "").strip() or None
+    if approval and len(approval) > 100:
+        return None, "批准文号超长（最多 100 字）"
+
+    raw_ings = raw.get("ingredients")
+    if not isinstance(raw_ings, list) or not raw_ings:
+        return None, "ingredients 必填：至少关联一个成分"
+    if len(raw_ings) > 30:
+        return None, "成分最多 30 项"
+    ings: list[dict] = []
+    seen: set[str] = set()
+    for i, item in enumerate(raw_ings):
+        if not isinstance(item, dict):
+            return None, f"ingredients[{i}] 必须是对象"
+        nm = str(item.get("name") or "").strip()
+        if not nm:
+            return None, f"ingredients[{i}].name 不能为空"
+        if len(nm) > 100:
+            return None, f"ingredients[{i}] 成分名超长（最多 100 字）"
+        st = str(item.get("strength") or "").strip() or None
+        if st and len(st) > 50:
+            return None, f"ingredients[{i}] 规格超长（最多 50 字）"
+        if nm in seen:
+            return None, "成分重复"
+        seen.add(nm)
+        entry: dict[str, Any] = {"name": nm}
+        if st:
+            entry["strength"] = st
+        ings.append(entry)
+    return {
+        "name_cn": name,
+        "dosage_form": form,
+        "trade_names": trade,
+        "aliases": alias,
+        "is_otc": bool(raw.get("is_otc")),
+        "is_tcm": bool(raw.get("is_tcm")),
+        "approval_no": approval,
+        "ingredients": ings,
+    }, None
+
+
+def _validate_draft_fields(kind: str, raw: Any) -> tuple[dict | None, str | None]:
+    """确认/编辑前的硬校验。返回 (规范化 fields, 错误)。
+
+    与 extract.normalize_candidate 的软校验分工：那边"能救就救"，
+    这边是入库前的最后一道闸，**从严** —— 错误必须在此拦死。
+    """
+    if kind not in ("ddi_rule", "drug"):
+        return None, f"暂不支持的类型（支持 ddi_rule / drug，得到 {kind}）"
+    if not isinstance(raw, dict):
+        return None, "fields 必须是对象"
+    if kind == "drug":
+        return _validate_drug_fields(raw)
+
+    out: dict[str, Any] = {}
+    for key in ("ing_a_name", "ing_b_name"):
+        name = str(raw.get(key) or "").strip()
+        if not name:
+            return None, f"{key} 不能为空"
+        if len(name) > 100:
+            return None, f"{key} 超长（最多 100 字）"
+        out[key] = name
+    if out["ing_a_name"] == out["ing_b_name"]:
+        return None, "成分对不能是同一个成分"
+    if raw.get("severity") not in SEVERITIES:
+        return None, f"severity 必须是 {'/'.join(SEVERITIES)} 之一"
+
+    # 其余可编辑字段复用规则编辑的校验（severity 已单独查过必填）
+    editable = {k: raw.get(k) for k in _RULE_EDITABLE if k in raw}
+    updates, err = _validate_rule_body(editable)
+    if err and err != "没有可更新的字段":
+        return None, err
+    out.update(updates)
+
+    raw_sources = raw.get("sources")
+    if raw_sources in (None, ""):
+        raw_sources = []
+    if not isinstance(raw_sources, list):
+        return None, "sources 必须是数组"
+    if len(raw_sources) > 10:
+        return None, "sources 最多 10 条"
+    sources: list[dict] = []
+    for i, s in enumerate(raw_sources):
+        if not isinstance(s, dict):
+            return None, f"sources[{i}] 必须是对象"
+        title = str(s.get("title") or "").strip()
+        if not title:
+            return None, f"sources[{i}].title 不能为空"
+        if len(title) > 200:
+            return None, f"sources[{i}].title 超长（最多 200 字）"
+        year = s.get("year")
+        if year in (None, ""):
+            year = None
+        else:
+            try:
+                year = int(year)
+            except (TypeError, ValueError):
+                return None, f"sources[{i}].year 必须是整数"
+            if not 1000 <= year <= 2100:
+                return None, f"sources[{i}].year 超出 1000–2100"
+
+        def _txt(key: str, cap: int) -> str | None:
+            val = str(s.get(key) or "").strip()
+            if not val:
+                return None
+            if len(val) > cap:
+                raise ValueError(f"sources[{i}].{key} 超长（最多 {cap} 字）")
+            return val
+
+        try:
+            stype = _txt("source_type", 100)
+            if stype is None:
+                stype = _txt("type", 100)
+            publisher = _txt("publisher", 200)
+            url = _txt("url", 300)
+            excerpt = _txt("excerpt", 2000)
+        except ValueError as e:
+            return None, str(e)
+        sources.append({
+            "title": title, "source_type": stype, "publisher": publisher,
+            "year": year, "url": url, "excerpt": excerpt,
+        })
+    out["sources"] = sources
+    return out, None
+
+
+@admin_bp.post("/import/parse")
+@require_admin
+def import_parse():
+    """粘贴文本 → LLM 抽取 → 草稿批量落暂存表。"""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _bad("请求体必须是 JSON 对象")
+    text = str(body.get("text") or "").strip()
+    if not text:
+        return _bad("text 不能为空")
+    if len(text) > IMPORT_TEXT_MAX:
+        return _bad(
+            f"文本过长（{len(text)} 字），上限 {IMPORT_TEXT_MAX} 字，"
+            f"请拆分后分批解析"
+        )
+    source_name = str(body.get("source_name") or "").strip()[:200] or None
+
+    from ddi.generate.extract import extract_candidates
+
+    extraction = extract_candidates(text, client=_svc().llm)
+    if extraction.degraded_reason:
+        # 502 而非 400：失败在模型侧，且**一行都不写**，不留半坏状态
+        return jsonify({
+            "error": extraction.degraded_reason,
+            "degraded_reason": extraction.degraded_reason,
+        }), 502
+
+    from uuid import uuid4
+
+    batch_id = uuid4().hex[:12]
+    now = _now()
+    _ensure_import_table()
+    drafts: list[dict] = []
+    with session() as conn:
+        for cand in extraction.candidates:
+            cur = conn.execute(
+                """INSERT INTO import_draft
+                   (kind, status, fields, raw_span, warnings, batch_id,
+                    source_name, created_at, updated_at)
+                   VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?)
+                   RETURNING id""",
+                (
+                    cand["kind"],
+                    json.dumps(cand["fields"], ensure_ascii=False),
+                    cand["raw_span"],
+                    json.dumps(cand["warnings"], ensure_ascii=False),
+                    batch_id,
+                    source_name,
+                    now,
+                    now,
+                ),
+            )
+            drafts.append({
+                "id": int(cur.fetchone()["id"]),
+                "kind": cand["kind"],
+                "kind_cn": KIND_CN.get(cand["kind"], cand["kind"]),
+                "fields": cand["fields"],
+                "raw_span": cand["raw_span"],
+                "warnings": cand["warnings"],
+            })
+    return jsonify({
+        "ok": True,
+        "batch_id": batch_id,
+        "used_llm": extraction.used_llm,
+        "model": extraction.model,
+        "drafts": drafts,
+        "skipped": extraction.skipped,
+    }), 201
+
+
+@admin_bp.get("/import/drafts")
+@require_admin
+def import_drafts_list():
+    _ensure_import_table()
+    status = (request.args.get("status") or "pending").strip()
+    kind = (request.args.get("kind") or "").strip()
+    batch_id = (request.args.get("batch_id") or "").strip()
+    q = (request.args.get("q") or "").strip()
+    page = max(1, int(request.args.get("page", 1)))
+    page_size = max(1, min(100, int(request.args.get("page_size", 20))))
+
+    where: list[str] = []
+    params: list[Any] = []
+    if status != "all":
+        if status not in ("pending", "confirmed"):
+            return _bad("status 必须是 pending / confirmed / all")
+        where.append("status = ?")
+        params.append(status)
+    if kind:
+        if kind not in KIND_CN:
+            return _bad(f"kind 必须是 {'/'.join(KIND_CN)} 之一")
+        where.append("kind = ?")
+        params.append(kind)
+    if batch_id:
+        where.append("batch_id = ?")
+        params.append(batch_id)
+    if q:
+        where.append("(fields LIKE ? OR IFNULL(raw_span, '') LIKE ?)")
+        like = f"%{q}%"
+        params.extend([like, like])
+    where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+
+    import math
+
+    with session() as conn:
+        total = conn.execute(
+            f"SELECT COUNT(*) AS n FROM import_draft{where_sql}", params
+        ).fetchone()["n"]
+        rows = conn.execute(
+            f"SELECT * FROM import_draft{where_sql} ORDER BY id DESC"
+            " LIMIT ? OFFSET ?",
+            params + [page_size, (page - 1) * page_size],
+        ).fetchall()
+    pages = max(1, math.ceil(total / page_size)) if total else 1
+    return jsonify({
+        "items": [_draft_to_dict(r) for r in rows],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    })
+
+
+@admin_bp.get("/import/drafts/<int:draft_id>")
+@require_admin
+def import_draft_get(draft_id: int):
+    _ensure_import_table()
+    with session() as conn:
+        row = conn.execute(
+            "SELECT * FROM import_draft WHERE id = ?", (draft_id,)
+        ).fetchone()
+    if not row:
+        return _bad("草稿不存在", 404)
+    return jsonify(_draft_to_dict(row))
+
+
+@admin_bp.put("/import/drafts/<int:draft_id>")
+@require_admin
+def import_draft_update(draft_id: int):
+    """人工修正草稿字段。kind / status / target_id 不可改。"""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not isinstance(body.get("fields"), dict):
+        return _bad("请求体需包含 fields 对象")
+    _ensure_import_table()
+    with session() as conn:
+        row = conn.execute(
+            "SELECT * FROM import_draft WHERE id = ?", (draft_id,)
+        ).fetchone()
+        if not row:
+            return _bad("草稿不存在", 404)
+        if row["status"] != "pending":
+            return _bad("已确认的草稿不可编辑", 409)
+        # 硬校验在**任何写入之前** —— 校验失败直接 return 是安全的
+        normalized, err = _validate_draft_fields(row["kind"], body["fields"])
+        if err:
+            return _bad(err)
+        conn.execute(
+            "UPDATE import_draft SET fields = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(normalized, ensure_ascii=False), _now(), draft_id),
+        )
+    return jsonify({"ok": True, "updated": ["fields"]})
+
+
+@admin_bp.delete("/import/drafts/<int:draft_id>")
+@require_admin
+def import_draft_delete(draft_id: int):
+    """丢弃草稿（硬删除）。confirmed 的清理也走这里。"""
+    _ensure_import_table()
+    with session() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM import_draft WHERE id = ?", (draft_id,)
+        ).fetchone()
+        if not exists:
+            return _bad("草稿不存在", 404)
+        conn.execute("DELETE FROM import_draft WHERE id = ?", (draft_id,))
+    return jsonify({"ok": True})
+
+
+@admin_bp.post("/import/drafts/<int:draft_id>/confirm")
+@require_admin
+def import_confirm(draft_id: int):
+    """确认入库：草稿 → ddi_rule（+ source 溯源）。未知成分自动创建。"""
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _bad("请求体必须是 JSON 对象")
+    status_override = body.get("status")
+    if status_override is not None and status_override not in STATUSES:
+        return _bad(f"status 必须是 {'/'.join(STATUSES)} 之一")
+
+    _ensure_import_table()
+    kind: str | None = None
+    target_id: int | None = None
+    created: list[str] = []
+    reload_kind = "rules"   # drug → reload_drugs，其余（规则）→ reload_rules
+    try:
+        with session() as conn:
+            row = conn.execute(
+                "SELECT * FROM import_draft WHERE id = ?", (draft_id,)
+            ).fetchone()
+            if not row:
+                raise _ImportError("草稿不存在", 404)
+            if row["status"] != "pending":
+                raise _ImportError("草稿已确认过", 409)
+            kind = row["kind"]
+            try:
+                raw_fields = json.loads(row["fields"] or "{}")
+            except (ValueError, TypeError):
+                raise _ImportError("草稿 fields 损坏，无法解析", 500) from None
+            fields, err = _validate_draft_fields(kind, raw_fields)
+            if err:
+                raise _ImportError(f"草稿校验未通过：{err}", 400)
+
+            if kind == "ddi_rule":
+                # 确认即人工审核通过 → 默认 reviewed；可用 body.status 覆盖
+                fields["status"] = (
+                    status_override or fields.get("status") or "reviewed"
+                )
+                if body.get("reviewed_by") is not None:
+                    fields["reviewed_by"] = (
+                        str(body["reviewed_by"]).strip()[:100] or None
+                    )
+
+                # ── 读阶段（一行未写）：成分解析 + 查重 ──
+                name_a, name_b = fields["ing_a_name"], fields["ing_b_name"]
+                resolved: dict[str, int] = {}
+                for nm in {name_a, name_b}:
+                    hit = conn.execute(
+                        "SELECT id FROM ingredient WHERE name_cn = ?", (nm,)
+                    ).fetchone()
+                    if hit:
+                        resolved[nm] = int(hit["id"])
+                if len(resolved) == 2:
+                    id_a, id_b = sorted(resolved.values())
+                    dup = conn.execute(
+                        "SELECT id FROM ddi_rule"
+                        " WHERE ing_a_id = ? AND ing_b_id = ?",
+                        (id_a, id_b),
+                    ).fetchone()
+                    if dup:
+                        raise _ImportError(
+                            f"该成分对已有规则 #{dup['id']}，"
+                            f"请直接编辑它或丢弃本草稿",
+                            409,
+                        )
+
+                # ── 写阶段：此后**只 raise 不 return**（return = 半截提交）──
+                for nm in (name_a, name_b):
+                    if nm not in resolved:
+                        iid = int(conn.execute(
+                            "INSERT INTO ingredient (name_cn) VALUES (?)", (nm,)
+                        ).lastrowid)
+                        resolved[nm] = iid
+                        created.append(nm)
+                id_a, id_b = sorted((resolved[name_a], resolved[name_b]))
+                cols = ["ing_a_id", "ing_b_id"]
+                vals: list[Any] = [id_a, id_b]
+                for key in ("severity", "mechanism", "consequence",
+                            "suggestion", "evidence_level", "status",
+                            "reviewed_by"):
+                    if key in fields:
+                        cols.append(key)
+                        vals.append(fields[key])
+                cur = conn.execute(
+                    f"INSERT INTO ddi_rule ({', '.join(cols)})"
+                    f" VALUES ({', '.join('?' * len(cols))})",
+                    vals,
+                )
+                target_id = int(cur.lastrowid)
+
+                from ddi.db.sources import link_rule_source, upsert_source
+
+                for src in fields.get("sources", []):
+                    sid = upsert_source(conn, src)
+                    link_rule_source(conn, target_id, sid, src.get("excerpt"))
+                reload_kind = "rules"
+
+            else:  # kind == "drug"（校验层已拦掉其他类型）
+                # ── 读阶段：同名同剂型查重 + 成分解析（全只读）──
+                drug_name = fields["name_cn"]
+                form = fields["dosage_form"]
+                dup = conn.execute(
+                    "SELECT id FROM drug"
+                    " WHERE name_cn = ? AND IFNULL(dosage_form, '') = IFNULL(?, '')",
+                    (drug_name, form),
+                ).fetchone()
+                if dup:
+                    raise _ImportError(
+                        f"同名同剂型药品已存在（id={dup['id']}）", 409
+                    )
+                resolved_d: dict[str, int] = {}
+                to_create: list[str] = []
+                for ing in fields["ingredients"]:
+                    nm = ing["name"]
+                    if nm in resolved_d:
+                        continue
+                    hit = conn.execute(
+                        "SELECT id FROM ingredient WHERE name_cn = ?", (nm,)
+                    ).fetchone()
+                    if hit:
+                        resolved_d[nm] = int(hit["id"])
+                    else:
+                        to_create.append(nm)
+
+                # ── 写阶段：只 raise 不 return ──
+                for nm in to_create:
+                    iid = int(conn.execute(
+                        "INSERT INTO ingredient (name_cn) VALUES (?)", (nm,)
+                    ).lastrowid)
+                    resolved_d[nm] = iid
+                    created.append(nm)
+                from ddi.db.loader import _pinyin
+
+                full_py, abbr_py = _pinyin(drug_name)
+                target_id = int(conn.execute(
+                    """INSERT INTO drug (name_cn, trade_names, aliases, pinyin,
+                                        pinyin_abbr, dosage_form, is_otc, is_tcm,
+                                        approval_no)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        drug_name,
+                        json.dumps(fields["trade_names"], ensure_ascii=False),
+                        json.dumps(fields["aliases"], ensure_ascii=False),
+                        full_py,
+                        abbr_py,
+                        form,
+                        int(fields["is_otc"]),
+                        int(fields["is_tcm"]),
+                        fields["approval_no"],
+                    ),
+                ).lastrowid)
+                for ing in fields["ingredients"]:
+                    conn.execute(
+                        "INSERT INTO drug_ingredient"
+                        " (drug_id, ingredient_id, strength) VALUES (?, ?, ?)",
+                        (target_id, resolved_d[ing["name"]],
+                         ing.get("strength")),
+                    )
+                reload_kind = "drugs"
+
+            conn.execute(
+                "UPDATE import_draft SET status = 'confirmed', target_id = ?,"
+                " updated_at = ? WHERE id = ?",
+                (target_id, _now(), draft_id),
+            )
+    except _ImportError as e:
+        return _bad(e.msg, e.code)
+
+    if reload_kind == "drugs":
+        _svc().reload_drugs()
+    else:
+        _svc().reload_rules()
+    return jsonify({
+        "ok": True,
+        "kind": kind,
+        "target_id": target_id,
+        "created_ingredients": created,
+    }), 201
+
+
 # ── 成分（新建规则/药品时的选择器数据源）────────────────
 @admin_bp.get("/ingredients")
 @require_admin
@@ -200,12 +863,17 @@ def rules_list():
         params.append(status)
 
     where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+    # 只有按成分名搜索（q）才需要 JOIN 两张成分表 ——
+    # 纯状态/严重度筛选直接数主表，少两次 JOIN。
+    count_from = (
+        " FROM ddi_rule r"
+        " JOIN ingredient ia ON ia.id = r.ing_a_id"
+        " JOIN ingredient ib ON ib.id = r.ing_b_id"
+        if q else " FROM ddi_rule r"
+    )
     with session() as conn:
         total = conn.execute(
-            f"SELECT COUNT(*) AS n FROM ddi_rule r"
-            f" JOIN ingredient ia ON ia.id = r.ing_a_id"
-            f" JOIN ingredient ib ON ib.id = r.ing_b_id{where_sql}",
-            params,
+            f"SELECT COUNT(*) AS n{count_from}{where_sql}", params,
         ).fetchone()["n"]
         rows = conn.execute(
             _RULES_SELECT + where_sql + " ORDER BY r.id LIMIT ? OFFSET ?",
@@ -377,6 +1045,68 @@ def rule_delete(rule_id: int):
         conn.execute("DELETE FROM ddi_rule WHERE id = ?", (rule_id,))
     _svc().reload_rules()
     return jsonify({"ok": True})
+
+
+@admin_bp.post("/rules/batch")
+@require_admin
+def rules_batch():
+    """批量改状态 / 批量删除。审核流（draft → reviewed → published）
+    靠它一次走完 —— 182 条规则逐条编辑是不现实的。
+
+    批量相对逐条的另一个收益：**只重载一次规则引擎**（reload_rules
+    是全量重建，逐条操作会把重建成本放大 N 倍）。
+    """
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _bad("请求体必须是 JSON 对象")
+    ids = body.get("ids")
+    if not isinstance(ids, list) or not ids:
+        return _bad("ids 必须是非空数组")
+    try:
+        id_list = sorted({int(i) for i in ids})
+    except (TypeError, ValueError):
+        return _bad("ids 必须全是整数")
+    if len(id_list) > 500:
+        return _bad("一次最多处理 500 条")
+
+    action = body.get("action")
+    updates: dict[str, Any] = {}
+    if action == "set_status":
+        updates, err = _validate_rule_body({"status": body.get("status")})
+        if err:
+            return _bad(err)
+    elif action != "delete":
+        return _bad("action 必须是 set_status 或 delete")
+
+    with session() as conn:
+        # 先校验全部 id 都存在，再动写入 —— session() 正常退出即 commit，
+        # 中途 return 会把半截写入提交掉（这是本文件反复强调的坑）。
+        ph = ",".join("?" * len(id_list))
+        existing = {
+            r["id"] for r in conn.execute(
+                f"SELECT id FROM ddi_rule WHERE id IN ({ph})", id_list
+            ).fetchall()
+        }
+        missing = [i for i in id_list if i not in existing]
+        if missing:
+            shown = ", ".join(str(i) for i in missing[:10])
+            more = f" 等 {len(missing)} 条" if len(missing) > 10 else ""
+            return _bad(f"规则不存在：{shown}{more}", 404)
+
+        if action == "delete":
+            cur = conn.execute(
+                f"DELETE FROM ddi_rule WHERE id IN ({ph})", id_list
+            )
+        else:
+            sets = ", ".join(f"{k} = ?" for k in updates)
+            cur = conn.execute(
+                f"UPDATE ddi_rule SET {sets} WHERE id IN ({ph})",
+                list(updates.values()) + id_list,
+            )
+        affected = cur.rowcount
+
+    _svc().reload_rules()
+    return jsonify({"ok": True, "action": action, "affected": affected})
 
 
 # ── 药品数据 ────────────────────────────────────────────
